@@ -37,7 +37,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    "events"
+    "events",
 ]
 
 MIDDLEWARE = [
@@ -84,7 +84,7 @@ DATABASES = {
 
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
-AUTH_USER_MODEL = 'events.User'
+AUTH_USER_MODEL = "events.User"
 
 AUTH_PASSWORD_VALIDATORS = [
     {
@@ -123,3 +123,7 @@ STATIC_URL = "static/"
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+# Store events images
+MEDIA_URL = "/media/"
+MEDIA_ROOT = BASE_DIR / "media"
