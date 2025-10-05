@@ -2,15 +2,20 @@ from django.db import models
 from django.utils import timezone
 
 from django.contrib.auth.models import AbstractUser
+from apps.users.models import User
 
 
 # Create your models here.
+<<<<<<< HEAD:events/models.py
 class User(AbstractUser):
     user_id = models.BigAutoField(primary_key=True)
     photo = models.ImageField(upload_to="profile_pics/", blank=True, null=True)
     # username = models.CharField(max_length=30)
 
 
+=======
+
+>>>>>>> feature/agregar-mapa:apps/events/models.py
 class Event(models.Model):
     name = models.CharField(max_length=250)
     description = models.TextField(blank=True)
