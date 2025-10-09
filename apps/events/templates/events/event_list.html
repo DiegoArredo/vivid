@@ -1,0 +1,103 @@
+{% extends 'events/components/base.html' %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'events/css/home.css' %}">
+<link rel="stylesheet" href="{% static 'events/css/event_card.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="main-container">
+    <!-- Sidebar con lista de eventos -->
+    <div class="sidebar">
+        <!-- Barra de búsqueda -->
+        <div class="search-bar">
+            <span class="clear-search" onclick="clearSearch()">✕</span>
+            <input 
+                type="text" 
+                placeholder="Buscar eventos..." 
+                id="search-input"
+                onkeyup="filterEvents()"
+            >
+            <span class="search-icon" onclick="filterEvents()">🔍</span>
+        </div>
+
+        <!-- Filtros -->
+        <div class="filter-section">
+            <span class="filter-label">Filtrar por</span>
+            <button class="filter-btn active" data-filter="all" onclick="applyFilter('all')">
+                Todo
+            </button>
+            <button class="filter-btn" data-filter="cercanos" onclick="applyFilter('cercanos')">
+                Más Cercanos
+            </button>
+            <button class="filter-btn" data-filter="recientes" onclick="applyFilter('recientes')">
+                Más Recientes
+            </button>
+            <button class="filter-btn" data-filter="populares" onclick="applyFilter('populares')">
+                Populares
+            </button>
+        </div>
+
+        <!-- Lista de eventos -->
+        <div id="eventos-list">
+            {% for evento in eventos %}
+                {% include 'events/components/event_card.html' with evento=evento %}
+            {% empty %}
+                <p class="no-events">No hay eventos disponibles en este momento.</p>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Sección del mapa -->
+    <div class="map-section">
+        <div id="map"></div>
+        
+        <!-- Botón flotante para crear evento -->
+        <button 
+            class="add-event-btn" 
+            id="btn-crear-evento"
+            title="Crear nuevo evento"
+        >
+            +
+        </button>
+    </div>
+</div>
+
+<!-- Data JSON embebido (oculto del linter) -->
+<script id="eventos-data" type="application/json">
+[
+    {% for evento in eventos %}
+    {
+        "id": {{ evento.id }},
+        "titulo": "{{ evento.titulo|escapejs }}",
+        "lat": {% if evento.latitud %}{{ evento.latitud }}{% else %}null{% endif %},
+        "lng": {% if evento.longitud %}{{ evento.longitud }}{% else %}null{% endif %}
+    }{% if not forloop.last %},{% endif %}
+    {% endfor %}
+]
+</script>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'events/js/mapa.js' %}"></script>
+<script src="{% static 'events/js/filtros.js' %}"></script>
+
+<script>
+    // Leer datos de eventos desde el script JSON
+    const eventosDataElement = document.getElementById('eventos-data');
+    const eventosData = JSON.parse(eventosDataElement.textContent);
+    
+    // Inicializar mapa con los eventos
+    if (typeof initMap === 'function') {
+        initMap(eventosData);
+    }
+    
+    // Configurar botón de crear evento
+    document.getElementById('btn-crear-evento').addEventListener('click', function() {
+        // Por ahora, alert. Luego reemplaza con la URL real
+        alert('Funcionalidad de crear evento - próximamente');
+        // window.location.href = '/eventos/crear/';
+    });
+</script>
+{% endblock %}
