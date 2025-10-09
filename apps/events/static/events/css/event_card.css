@@ -1,0 +1,217 @@
+/* Tarjeta de evento */
+.event-card {
+    background: var(--white);
+    border-radius: 15px;
+    padding: 20px;
+    display: flex;
+    gap: 20px;
+    box-shadow: var(--shadow-sm);
+    transition: transform 0.3s, box-shadow 0.3s;
+    cursor: pointer;
+}
+
+.event-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.event-card.highlighted {
+    background: #fff3e0;
+    border: 2px solid var(--primary-color);
+}
+
+/* Imagen del evento */
+.event-image {
+    width: 260px;
+    height: 180px;
+    min-width: 260px;
+    border-radius: 10px;
+    overflow: hidden;
+    position: relative;
+}
+
+.event-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* Imagen por defecto con decoración */
+.default-image {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(180deg, #87CEEB 0%, #98D8C8 100%);
+    position: relative;
+}
+
+.cloud {
+    position: absolute;
+    background: var(--white);
+    border-radius: 50%;
+}
+
+.cloud1 {
+    width: 60px;
+    height: 25px;
+    top: 30px;
+    left: 30px;
+    animation: float 3s ease-in-out infinite;
+}
+
+.cloud2 {
+    width: 50px;
+    height: 20px;
+    top: 50px;
+    right: 40px;
+    animation: float 4s ease-in-out infinite;
+}
+
+@keyframes float {
+    0%, 100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-10px);
+    }
+}
+
+.hill {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    height: 60%;
+    background: linear-gradient(180deg, #7CB342 0%, #558B2F 100%);
+    border-radius: 50% 50% 0 0;
+}
+
+/* Detalles del evento */
+.event-details {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.event-title {
+    font-size: 22px;
+    font-weight: 600;
+    margin-bottom: 10px;
+    color: var(--text-dark);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+}
+
+.event-meta {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 8px;
+    color: var(--text-medium);
+    font-size: 14px;
+    flex-wrap: wrap;
+}
+
+.event-meta span {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.event-location {
+    color: var(--text-medium);
+    font-size: 14px;
+    margin-bottom: 4px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.event-organizer {
+    color: var(--text-medium);
+    font-size: 13px;
+    margin-bottom: 12px;
+}
+
+.event-description {
+    color: var(--text-light);
+    font-size: 14px;
+    line-height: 1.5;
+    margin-bottom: 15px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+}
+
+/* Tags/Etiquetas */
+.event-tags {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 15px;
+    flex-wrap: wrap;
+}
+
+.tag {
+    padding: 6px 14px;
+    border-radius: 20px;
+    border: 1px solid var(--primary-color);
+    color: var(--primary-color);
+    font-size: 12px;
+    background: var(--white);
+    transition: all 0.3s;
+}
+
+.tag:hover {
+    background: var(--primary-color);
+    color: var(--white);
+}
+
+/* Botón asistir */
+.attend-btn {
+    background: var(--primary-color);
+    color: var(--white);
+    border: none;
+    padding: 12px 30px;
+    border-radius: 25px;
+    cursor: pointer;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: background 0.3s, transform 0.2s;
+    align-self: flex-start;
+    font-size: 14px;
+}
+
+.attend-btn:hover {
+    background: var(--primary-hover);
+    transform: translateY(-2px);
+}
+
+.attend-btn:active {
+    transform: translateY(0);
+}
+
+.attend-btn.attending {
+    background: #4CAF50;
+}
+
+.attend-btn.attending:hover {
+    background: #45a049;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .event-card {
+        flex-direction: column;
+    }
+    
+    .event-image {
+        width: 100%;
+        min-width: 100%;
+        height: 200px;
+    }
+}
