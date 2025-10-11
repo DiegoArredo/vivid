@@ -122,9 +122,9 @@ USE_TZ = True
 STATIC_URL = "static/"
 
 
-STATICFILES_DIRS = [
-    BASE_DIR / "apps" / "events" / "static",
-]
+#STATICFILES_DIRS = [
+#    BASE_DIR / "apps" / "events" / "static" / "events",
+#]
 
 STATIC_ROOT = BASE_DIR / "staticfiles"  # Para producción
 

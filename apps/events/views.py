@@ -15,7 +15,6 @@ from .models import Event
 #    return render(request, 'events/test_card.html')
 
 
-
 def event_list(request):
     """
     Vista principal: muestra la lista de eventos con mapa
@@ -27,6 +26,9 @@ def event_list(request):
     }
     
     return render(request, 'events/event_list.html', context)
+
+
+
 
 def test_view(request):
     return render(request, 'events/tests/test_mapa.html')
