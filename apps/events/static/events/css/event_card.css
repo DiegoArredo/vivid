@@ -215,3 +215,15 @@
         height: 200px;
     }
 }
+
+/* Clase para resaltar evento */
+.event-card.highlighted {
+    background: #fff3e0;
+    border: 2px solid var(--primary-color);
+    transform: scale(1.02);
+}
+
+/* Marcador personalizado del mapa */
+.custom-marker {
+    transition: transform 0.3s;
+}
