@@ -2,31 +2,66 @@
 let map;
 let markers = [];
 
+// Inicializar cuando el DOM esté listo
+document.addEventListener('DOMContentLoaded', function() {
+    // Leer datos de eventos
+    const eventosDataElement = document.getElementById('eventos-data');
+    
+    if (!eventosDataElement) {
+        console.warn('No se encontró el elemento eventos-data');
+        return;
+    }
+    
+    let eventosData = [];
+    try {
+        eventosData = JSON.parse(eventosDataElement.textContent);
+    } catch (e) {
+        console.error('Error al parsear datos de eventos:', e);
+        return;
+    }
+    
+    // Inicializar mapa
+    initMap(eventosData);
+    
+    // Configurar clicks en event cards
+    setupEventCardClicks();
+});
+
 function initMap(eventosData) {
-    // Inicializar mapa centrado en Santiago, Chile
-    map = new maplibregl.Map({
-        container: 'map',
-        style: 'https://demotiles.maplibre.org/style.json',
-        center: [-70.6643, -33.4569], // [lng, lat]
-        zoom: 13,
-        pitch: 0,
-        bearing: 0
-    });
+    try {
+        // Verificar que maplibregl esté disponible
+        if (typeof maplibregl === 'undefined') {
+            console.error('MapLibre GL no está cargado');
+            return;
+        }
+        
+        // Inicializar mapa centrado en Santiago, Chile
+        map = new maplibregl.Map({
+            container: 'map',
+            style: 'https://demotiles.maplibre.org/style.json',
+            center: [-70.6643, -33.4569], // [lng, lat]
+            zoom: 13
+        });
 
-    // Agregar controles de navegación
-    map.addControl(new maplibregl.NavigationControl(), 'top-right');
-
-    // Agregar control de escala
-    map.addControl(new maplibregl.ScaleControl({
-        maxWidth: 100,
-        unit: 'metric'
-    }));
-
-    // Cuando el mapa termine de cargar
-    map.on('load', function() {
-        // Agregar marcadores de eventos
-        addEventMarkers(eventosData);
-    });
+        // Cuando el mapa termine de cargar
+        map.on('load', function() {
+            console.log('✅ Mapa cargado correctamente');
+            
+            // Agregar controles de navegación
+            map.addControl(new maplibregl.NavigationControl(), 'top-right');
+            
+            // Agregar marcadores de eventos
+            addEventMarkers(eventosData);
+        });
+        
+        // Manejar errores del mapa
+        map.on('error', function(e) {
+            console.error('Error del mapa:', e);
+        });
+        
+    } catch (error) {
+        console.error('Error al inicializar el mapa:', error);
+    }
 }
 
 function addEventMarkers(eventos) {
@@ -54,7 +89,7 @@ function addEventMarkers(eventos) {
             });
 
             // Crear marcador
-            const marker = new maplibregl.Marker(el)
+            const marker = new maplibregl.Marker({element: el})
                 .setLngLat([evento.lng, evento.lat])
                 .addTo(map);
 
@@ -65,7 +100,7 @@ function addEventMarkers(eventos) {
                 closeOnClick: false
             }).setHTML(`
                 <div style="padding: 10px;">
-                    <h4 style="margin: 0 0 8px 0; color: #333;">${evento.titulo}</h4>
+                    <h4 style="margin: 0 0 8px 0; color: #333;">${evento.name}</h4>
                     <button 
                         onclick="scrollToEvent(${evento.id})"
                         style="
@@ -88,7 +123,7 @@ function addEventMarkers(eventos) {
 
             // Click en marcador muestra popup
             el.addEventListener('click', function() {
-                popup.addTo(map);
+                marker.togglePopup();
             });
 
             // Guardar referencia del marcador
@@ -100,20 +135,22 @@ function addEventMarkers(eventos) {
         }
     });
 
-    // Si hay eventos, ajustar la vista del mapa para mostrarlos todos
+    // Si hay eventos, ajustar la vista del mapa
     if (eventos.length > 0) {
-        const bounds = new maplibregl.LngLatBounds();
-        eventos.forEach(evento => {
-            if (evento.lat && evento.lng) {
-                bounds.extend([evento.lng, evento.lat]);
-            }
-        });
+        const validEvents = eventos.filter(e => e.lat && e.lng);
         
-        if (!bounds.isEmpty()) {
-            map.fitBounds(bounds, {
-                padding: 50,
-                maxZoom: 15
+        if (validEvents.length > 0) {
+            const bounds = new maplibregl.LngLatBounds();
+            validEvents.forEach(evento => {
+                bounds.extend([evento.lng, evento.lat]);
             });
+            
+            if (!bounds.isEmpty()) {
+                map.fitBounds(bounds, {
+                    padding: 50,
+                    maxZoom: 15
+                });
+            }
         }
     }
 }
@@ -134,7 +171,7 @@ function showEventOnMap(eventoId) {
         
         // Mostrar el popup
         setTimeout(() => {
-            markerData.popup.addTo(map);
+            markerData.marker.togglePopup();
         }, 1000);
     }
 }
@@ -155,4 +192,26 @@ function scrollToEvent(eventoId) {
             eventCard.classList.remove('highlighted');
         }, 2000);
     }
+}
+
+// Configurar clicks en las tarjetas de eventos
+function setupEventCardClicks() {
+    const eventCards = document.querySelectorAll('.event-card');
+    
+    eventCards.forEach(card => {
+        card.addEventListener('click', function(e) {
+            // No hacer nada si se hizo click en el botón
+            if (e.target.closest('.attend-btn')) {
+                return;
+            }
+            
+            const eventId = parseInt(this.dataset.eventId);
+            if (eventId) {
+                showEventOnMap(eventId);
+            }
+        });
+        
+        // Cursor pointer para indicar que es clickeable
+        card.style.cursor = 'pointer';
+    });
 }
