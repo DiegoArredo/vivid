@@ -12,31 +12,22 @@
     <div class="sidebar">
         <!-- Barra de búsqueda -->
         <div class="search-bar">
-            <span class="clear-search" onclick="clearSearch()">✕</span>
+            <span class="clear-search">✕</span>
             <input 
                 type="text" 
                 placeholder="Buscar eventos..." 
                 id="search-input"
-                onkeyup="filterEvents()"
             >
-            <span class="search-icon" onclick="filterEvents()">🔍</span>
+            <span class="search-icon">🔍</span>
         </div>
 
         <!-- Filtros -->
         <div class="filter-section">
             <span class="filter-label">Filtrar por</span>
-            <button class="filter-btn active" data-filter="all" onclick="applyFilter('all')">
-                Todo
-            </button>
-            <button class="filter-btn" data-filter="cercanos" onclick="applyFilter('cercanos')">
-                Más Cercanos
-            </button>
-            <button class="filter-btn" data-filter="recientes" onclick="applyFilter('recientes')">
-                Más Recientes
-            </button>
-            <button class="filter-btn" data-filter="populares" onclick="applyFilter('populares')">
-                Populares
-            </button>
+            <button class="filter-btn active" data-filter="all">Todo</button>
+            <button class="filter-btn" data-filter="cercanos">Más Cercanos</button>
+            <button class="filter-btn" data-filter="recientes">Más Recientes</button>
+            <button class="filter-btn" data-filter="populares">Populares</button>
         </div>
 
         <!-- Lista de eventos -->
@@ -56,7 +47,7 @@
         <!-- Botón flotante para crear evento -->
         <button 
             class="add-event-btn" 
-            id="btn-crear-evento"
+            onclick="alert('Funcionalidad de crear evento - próximamente')"
             title="Crear nuevo evento"
         >
             +
@@ -64,13 +55,13 @@
     </div>
 </div>
 
-<!-- Data JSON embebido (oculto del linter) -->
+<!-- Data JSON para JavaScript -->
 <script id="eventos-data" type="application/json">
 [
     {% for evento in eventos %}
     {
         "id": {{ evento.id }},
-        "titulo": "{{ evento.titulo|escapejs }}",
+        "name": "{{ evento.name|escapejs }}",
         "lat": {% if evento.latitud %}{{ evento.latitud }}{% else %}null{% endif %},
         "lng": {% if evento.longitud %}{{ evento.longitud }}{% else %}null{% endif %}
     }{% if not forloop.last %},{% endif %}
@@ -82,22 +73,4 @@
 {% block extra_js %}
 <script src="{% static 'events/js/mapa.js' %}"></script>
 <script src="{% static 'events/js/filtros.js' %}"></script>
-
-<script>
-    // Leer datos de eventos desde el script JSON
-    const eventosDataElement = document.getElementById('eventos-data');
-    const eventosData = JSON.parse(eventosDataElement.textContent);
-    
-    // Inicializar mapa con los eventos
-    if (typeof initMap === 'function') {
-        initMap(eventosData);
-    }
-    
-    // Configurar botón de crear evento
-    document.getElementById('btn-crear-evento').addEventListener('click', function() {
-        // Por ahora, alert. Luego reemplaza con la URL real
-        alert('Funcionalidad de crear evento - próximamente');
-        // window.location.href = '/eventos/crear/';
-    });
-</script>
 {% endblock %}
