@@ -14,4 +14,4 @@ from django.http import HttpResponse
 #    return render(request, 'events/test_card.html')
 
 def test_view(request):
-    return render(request, 'events/test_mapa.html')
+    return render(request, 'events/tests/test_mapa.html')
