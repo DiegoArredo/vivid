@@ -1,0 +1,33 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Test Navbar</title>
+    <link rel="stylesheet" href="{% static 'events/css/base.css' %}">
+    <link rel="stylesheet" href="{% static 'events/css/navbar.css' %}">
+</head>
+<body>
+    <!-- Header/Navbar -->
+    <header class="header">
+        <div class="logo-section">
+            <div class="logo">🎯</div>
+            <div class="logo-text">
+                <h1>Vivid</h1>
+                <p>Tu próxima aventura te espera</p>
+            </div>
+        </div>
+        <nav class="nav-menu">
+            <a href="#">Eventos</a>
+            <a href="#">Mis Eventos</a>
+            <a href="#">Calendario</a>
+            <a href="#">Sobre Nosotros</a>
+            <div class="user-icon">👤</div>
+        </nav>
+    </header>
+    
+    <div style="padding: 20px;">
+        <h2>Test del Navbar</h2>
+    </div>
+</body>
+</html>

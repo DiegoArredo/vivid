@@ -1,0 +1,112 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
+    <title>Test Mapa</title>
+    
+    <!-- MapLibre GL JS - Usar CDN UNPKG con versión específica -->
+    <script src="https://unpkg.com/maplibre-gl@5.0.1/dist/maplibre-gl.js"></script>
+    <link href="https://unpkg.com/maplibre-gl@5.0.1/dist/maplibre-gl.css" rel="stylesheet" />
+    
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+        }
+        
+        #map {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 100%;
+        }
+        
+        .info-box {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            z-index: 1000;
+            font-family: Arial, sans-serif;
+        }
+        
+        .info-box h3 {
+            margin: 0 0 10px 0;
+            font-size: 18px;
+        }
+        
+        .info-box p {
+            margin: 5px 0;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="info-box">
+        <h3>Test de Mapa</h3>
+        <p id="status">Cargando mapa...</p>
+    </div>
+    
+    <div id="map"></div>
+    
+    <script>
+        // Esperar a que el DOM esté completamente cargado
+        document.addEventListener('DOMContentLoaded', function() {
+            try {
+                // Verificar que maplibregl está disponible
+                if (typeof maplibregl === 'undefined') {
+                    document.getElementById('status').textContent = '❌ MapLibre GL no se cargó';
+                    return;
+                }
+                
+                // Inicializar el mapa
+                const map = new maplibregl.Map({
+                    container: 'map',
+                    style: 'https://demotiles.maplibre.org/style.json',
+                    center: [-70.6643, -33.4569], // [lng, lat] Santiago, Chile
+                    zoom: 13
+                });
+                
+                // Evento cuando el mapa termina de cargar
+                map.on('load', function() {
+                    document.getElementById('status').textContent = 'Mapa cargado correctamente';
+                    console.log('✅ Mapa inicializado correctamente');
+                    
+                    // Agregar controles de navegación
+                    map.addControl(new maplibregl.NavigationControl(), 'top-right');
+                    
+                    // Agregar un marcador de prueba personalizado
+                    const el = document.createElement('div');
+                    el.style.width = '30px';
+                    el.style.height = '30px';
+                    el.style.backgroundColor = '#FF7B54';
+                    el.style.border = '3px solid white';
+                    el.style.borderRadius = '50%';
+                    el.style.boxShadow = '0 2px 8px rgba(0,0,0,0.3)';
+                    el.style.cursor = 'pointer';
+                    
+                    // Crear marcador
+                    new maplibregl.Marker({element: el})
+                        .setLngLat([-70.6643, -33.4569])
+                        .addTo(map);
+                });
+                
+                // Manejar errores del mapa
+                map.on('error', function(e) {
+                    console.error('Error del mapa:', e);
+                    document.getElementById('status').textContent = '❌ Error al cargar el mapa';
+                });
+                
+            } catch (error) {
+                console.error('Error al inicializar el mapa:', error);
+                document.getElementById('status').textContent = '❌ Error: ' + error.message;
+            }
+        });
+    </script>
+</body>
+</html>

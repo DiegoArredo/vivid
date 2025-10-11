@@ -1,6 +1,8 @@
 from django.urls import path
 from . import views
 
+app_name = 'events'
+
 urlpatterns = [
-    path("", views.index, name="events_index"),  # página principal de events
+    path('test/', views.test_view, name='test'),
 ]

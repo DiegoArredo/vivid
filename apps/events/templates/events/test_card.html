@@ -1,0 +1,48 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Test Event Card</title>
+    <link rel="stylesheet" href="{% static 'events/css/base.css' %}">
+    <link rel="stylesheet" href="{% static 'events/css/event_card.css' %}">
+</head>
+<body style="padding: 20px; background: #f5f5f5;">
+    <h2>Test de Event Card</h2>
+    
+    <!-- Tarjeta de evento estática -->
+    <div class="event-card">
+        <div class="event-image">
+            <div class="default-image">
+                <div class="cloud cloud1"></div>
+                <div class="cloud cloud2"></div>
+                <div class="hill"></div>
+            </div>
+        </div>
+        
+        <div class="event-details">
+            <h3 class="event-title">Evento de Prueba</h3>
+            
+            <div class="event-meta">
+                <span>📍 200 M</span>
+                <span>• 10-10-25, 16:30</span>
+            </div>
+            
+            <p class="event-location">Beauchef 850, Santiago, Chile</p>
+            <p class="event-organizer">de: Usuario de Prueba</p>
+            
+            <p class="event-description">
+                Esta es una descripción de prueba para verificar que los estilos funcionan correctamente.
+            </p>
+            
+            <div class="event-tags">
+                <span class="tag">Testing</span>
+                <span class="tag">Frontend</span>
+                <span class="tag">Gratis</span>
+            </div>
+            
+            <button class="attend-btn">Asistir 🚀</button>
+        </div>
+    </div>
+</body>
+</html>
