@@ -3,19 +3,72 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
     <title>{% block title %}Vivid - Tu próxima aventura te espera{% endblock %}</title>
     
-    <!-- MapLibre GL CSS -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/maplibre-gl/3.6.2/maplibre-gl.css" />
+    <!-- MapLibre GL JS - Versión correcta desde UNPKG -->
+    <script src="https://unpkg.com/maplibre-gl@5.0.1/dist/maplibre-gl.js"></script>
+    <link href="https://unpkg.com/maplibre-gl@5.0.1/dist/maplibre-gl.css" rel="stylesheet" />
     
-    <!-- Estilos personalizados -->
+    <!-- CSS Base -->
     <link rel="stylesheet" href="{% static 'events/css/base.css' %}">
     <link rel="stylesheet" href="{% static 'events/css/navbar.css' %}">
     
     {% block extra_css %}{% endblock %}
+    
+    <style>
+        /* Estilos para mensajes de Django */
+        .messages {
+            position: fixed;
+            top: 100px;
+            right: 20px;
+            z-index: 9999;
+            max-width: 400px;
+        }
+        
+        .alert {
+            padding: 15px 20px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            background: white;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            animation: slideInRight 0.3s ease;
+        }
+        
+        .alert-success {
+            border-left: 4px solid #4CAF50;
+            color: #2d6a2f;
+        }
+        
+        .alert-error {
+            border-left: 4px solid #f44336;
+            color: #c62828;
+        }
+        
+        @keyframes slideInRight {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+    </style>
 </head>
 <body>
+    <!-- Mensajes de Django -->
+    {% if messages %}
+    <div class="messages">
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }}">
+            {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
     <!-- Header/Navbar -->
     <header class="header">
         <div class="logo-section">
@@ -32,9 +85,8 @@
             <a href="#">Sobre Nosotros</a>
             {% if user.is_authenticated %}
                 <span style="color: white; font-size: 14px;">{{ user.username }}</span>
-                <a href="{% url 'users:logout' %}">Cerrar Sesión</a>
             {% else %}
-                <a href="{% url 'users:login' %}">Iniciar Sesión</a>
+                <a href="#">Iniciar Sesión</a>
             {% endif %}
             <div class="user-icon">
                 {% if user.is_authenticated %}
@@ -49,8 +101,16 @@
     <!-- Contenido principal -->
     {% block content %}{% endblock %}
 
-    <!-- MapLibre GL JavaScript -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/maplibre-gl/3.6.2/maplibre-gl.js"></script>
+    <!-- Auto-ocultar mensajes después de 5 segundos -->
+    <script>
+        setTimeout(function() {
+            const messages = document.querySelector('.messages');
+            if (messages) {
+                messages.style.animation = 'slideInRight 0.3s ease reverse';
+                setTimeout(() => messages.remove(), 300);
+            }
+        }, 5000);
+    </script>
     
     <!-- Scripts personalizados -->
     {% block extra_js %}{% endblock %}
