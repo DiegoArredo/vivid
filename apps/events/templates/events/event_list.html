@@ -47,11 +47,21 @@
         <!-- Botón flotante para crear evento -->
         <button 
             class="add-event-btn" 
-            onclick="alert('Funcionalidad de crear evento - próximamente')"
+            data-href="{% url 'events:event_create' %}"
             title="Crear nuevo evento"
         >
             +
         </button>
+
+        <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            document.querySelectorAll(".add-event-btn").forEach(btn => {
+                btn.addEventListener("click", () => {
+                    window.location.href = btn.dataset.href;
+                });
+            });
+        });
+        </script>
     </div>
 </div>
 

@@ -32,7 +32,7 @@ def event_list(request):
     return render(request, 'events/event_list.html', context)
 
 # Vista para crear nuevo evento
-@login_required
+#@login_required -> Login se hará en futuras iteraciones
 def event_create(request):
     if request.method == 'POST':
         form = EventForm(request.POST)
@@ -48,7 +48,7 @@ def event_create(request):
             evento.save()
             
             # Mensaje de éxito
-            messages.success(request, f'✅ Evento "{evento.name}" creado exitosamente!')
+            messages.success(request, f'Evento "{evento.name}" creado exitosamente!')
             
             # Redirigir a la lista de eventos
             return redirect('events:event_list')
