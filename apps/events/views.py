@@ -1,4 +1,4 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.http import HttpResponse
@@ -35,7 +35,7 @@ def event_list(request):
 #@login_required -> Login se hará en futuras iteraciones
 def event_create(request):
     if request.method == 'POST':
-        form = EventForm(request.POST, request.FILES)  # ← Añadir request.FILES
+        form = EventForm(request.POST, request.FILES) 
         
         if form.is_valid():
             evento = form.save(commit=False)
@@ -69,7 +69,20 @@ def event_create(request):
     context = {'form': form}
     return render(request, 'events/event_create.html', context)
 
-            
+# Vista de detalle: muestra toda la información de un evento específico
+def event_detail(request, event_id):
+    evento = get_object_or_404(Event, id=event_id)
+    
+    # Obtener imágenes adicionales del evento (si existen)
+    imagenes_adicionales = evento.images.all()
+    
+    context = {
+        'evento': evento,
+        'imagenes_adicionales': imagenes_adicionales,
+    }
+    
+    return render(request, 'events/event_detail.html', context)
+
 
 # Vista de testeo de mapa
 def test_view(request):
