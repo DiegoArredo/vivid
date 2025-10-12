@@ -163,22 +163,23 @@
     transform: scale(1.05);
 }
 
-/* Scrollbar personalizado */
+/* Scrollbar personalizado - más pequeño y discreto */
 .sidebar::-webkit-scrollbar {
-    width: 8px;
+    width: 7px;
 }
 
 .sidebar::-webkit-scrollbar-track {
-    background: #f1f1f1;
+    background: transparent;
 }
 
 .sidebar::-webkit-scrollbar-thumb {
-    background: var(--primary-color);
-    border-radius: 4px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 3px;
+    max-height: 10px;
 }
 
 .sidebar::-webkit-scrollbar-thumb:hover {
-    background: var(--primary-hover);
+    background: rgba(0, 0, 0, 0.3); 
 }
 
 /* Responsive */
