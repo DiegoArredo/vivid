@@ -1,4 +1,5 @@
 /* Layout principal */
+
 .main-container {
     display: flex;
     height: calc(100vh - 80px);

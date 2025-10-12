@@ -1,0 +1,157 @@
+{% extends 'events/base.html' %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'events/css/event_detail.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="detail-container">
+    <!-- Imagen principal -->
+    <div class="detail-hero">
+        {% if evento.photo %}
+            <img src="{{ evento.photo.url }}" alt="{{ evento.name }}" class="hero-image">
+        {% else %}
+            <div class="hero-placeholder">
+                <div class="cloud cloud1"></div>
+                <div class="cloud cloud2"></div>
+                <div class="hill"></div>
+            </div>
+        {% endif %}
+        <div class="hero-overlay">
+            <h1 class="detail-title">{{ evento.name }}</h1>
+        </div>
+    </div>
+
+    <!-- Contenido principal -->
+    <div class="detail-content">
+        <!-- Información básica -->
+        <div class="detail-section">
+            <div class="info-grid">
+                <div class="info-item">
+                    <span class="info-icon">📅</span>
+                    <div class="info-text">
+                        <span class="info-label">Fecha y hora</span>
+                        <span class="info-value">{{ evento.date|date:"d/m/Y - H:i" }} hrs</span>
+                    </div>
+                </div>
+
+                <div class="info-item">
+                    <span class="info-icon">📍</span>
+                    <div class="info-text">
+                        <span class="info-label">Ubicación</span>
+                        <span class="info-value">{{ evento.location|default:"Sin ubicación especificada" }}</span>
+                    </div>
+                </div>
+
+                <div class="info-item">
+                    <span class="info-icon">👤</span>
+                    <div class="info-text">
+                        <span class="info-label">Organizador</span>
+                        <span class="info-value">{{ evento.owner.username }}</span>
+                    </div>
+                </div>
+
+                {% if evento.category %}
+                <div class="info-item">
+                    <span class="info-icon">🏷️</span>
+                    <div class="info-text">
+                        <span class="info-label">Categoría</span>
+                        <span class="info-value">{{ evento.category.category }}</span>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Descripción -->
+        <div class="detail-section">
+            <h2 class="section-title">Sobre el evento</h2>
+            <p class="detail-description">
+                {{ evento.description|default:"Sin descripción disponible" }}
+            </p>
+        </div>
+
+        <!-- Tags -->
+        {% if evento.tags %}
+        <div class="detail-section">
+            <h2 class="section-title">Etiquetas</h2>
+            <div class="detail-tags">
+                {% for tag in evento.tags.split %}
+                    <span class="detail-tag">{{ tag }}</span>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Imágenes adicionales -->
+        {% if imagenes_adicionales %}
+        <div class="detail-section">
+            <h2 class="section-title">Galería</h2>
+            <div class="detail-gallery">
+                {% for imagen in imagenes_adicionales %}
+                    <div class="gallery-item">
+                        <img src="{{ imagen.image.url }}" alt="{{ imagen.caption }}">
+                        {% if imagen.caption %}
+                            <p class="gallery-caption">{{ imagen.caption }}</p>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Mapa (tiene coordenadas) -->
+        {% if evento.latitud and evento.longitud %}
+        <div class="detail-section">
+            <h2 class="section-title">Ubicación en el mapa</h2>
+            <div id="detail-map" 
+                 data-lat="{{ evento.latitud }}" 
+                 data-lng="{{ evento.longitud }}">
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Botones de acción -->
+        <div class="detail-actions">
+            <a href="{% url 'events:event_list' %}" class="btn-back">
+                ⬅ Volver
+            </a>
+            <button class="btn-attend">
+                Asistir al evento🚀
+            </button>
+            <button class="btn-share">
+                Compartir
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{% if evento.latitud and evento.longitud %}
+<script>
+    // Inicializar mapa para el evento específico
+    document.addEventListener('DOMContentLoaded', function() {
+        const mapDiv = document.getElementById('detail-map');
+        const lat = parseFloat(mapDiv.dataset.lat);
+        const lng = parseFloat(mapDiv.dataset.lng);
+
+        const map = new maplibregl.Map({
+            container: 'detail-map',
+            style: 'https://demotiles.maplibre.org/style.json',
+            center: [lng, lat],
+            zoom: 15
+        });
+
+        // Añadir marcador
+        new maplibregl.Marker({color: '#FF7B54'})
+            .setLngLat([lng, lat])
+            .addTo(map);
+
+        // Añadir controles
+        map.addControl(new maplibregl.NavigationControl());
+    });
+</script>
+{% endif %}
+{% endblock %}

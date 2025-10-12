@@ -1,4 +1,5 @@
 /* Header/Navbar */
+
 .header {
     background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-light) 100%);
     padding: 20px 40px;
