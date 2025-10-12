@@ -22,10 +22,11 @@ from django.conf.urls.static import static
 
 urlpatterns = [
     path("admin/", admin.site.urls),
-    path('', include('apps.dashboard.urls')),      # Dashboard en raíz
-    path('users/', include('apps.users.urls')),    # Autenticación
-    path('events/', include('apps.events.urls')),  # Eventos
+    path('', include('apps.events.urls')),                # Events en la raíz
+    path('users/', include('apps.users.urls')),           # Autenticación
+    #path('dashboard/', include('apps.dashboard.urls')),  # Dashboard personal (futuro)
 ]
+
 
 # Servir archivos media y static en desarrollo
 if settings.DEBUG:

@@ -35,34 +35,41 @@ def event_list(request):
 #@login_required -> Login se hará en futuras iteraciones
 def event_create(request):
     if request.method == 'POST':
-        form = EventForm(request.POST)
+        form = EventForm(request.POST, request.FILES)  # ← Añadir request.FILES
         
         if form.is_valid():
-            # Guardar el evento pero sin commit todavía
             evento = form.save(commit=False)
+
+            if evento.location:
+                # Aquí llamaríamos a una API de geocoding
+                # Por ahora, dejar en null (el modelo permite null=True, blank=True)
+                pass
+        
+            # Temporal: asignar un usuario por defecto
+            # Cuando se implemente login, usa: evento.owner = request.user
+            if request.user.is_authenticated:
+                evento.owner = request.user
+
+            # Asignar al primer usuario existente (solo para testing)    
+            else:
+                from django.contrib.auth import get_user_model
+                User = get_user_model()
+                evento.owner = User.objects.first()
+                
+                if not evento.owner:
+                    messages.error(request, 'No hay usuarios en el sistema.')
+                    return redirect('events:event_create')
             
-            # Asignar el usuario como organizador
-            evento.owner = request.user
-            
-            # Guardar en la base de datos
             evento.save()
-            
-            # Mensaje de éxito
             messages.success(request, f'Evento "{evento.name}" creado exitosamente!')
-            
-            # Redirigir a la lista de eventos
             return redirect('events:event_list')
     else:
-        # Mostrar formulario vacío
         form = EventForm()
     
-    context = {
-        'form': form,
-    }
-    
+    context = {'form': form}
     return render(request, 'events/event_create.html', context)
 
-
+            
 
 # Vista de testeo de mapa
 def test_view(request):

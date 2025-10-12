@@ -4,7 +4,7 @@ from .models import Event, Category
 class EventForm(forms.ModelForm):
     class Meta:
         model = Event
-        fields = ['name', 'description', 'date', 'location', 'category', 'tags']
+        fields = ['name', 'description', 'date', 'location', 'category', 'photo', 'tags']
         widgets = {
             'name': forms.TextInput(attrs={
                 'class': 'form-input',
@@ -25,6 +25,10 @@ class EventForm(forms.ModelForm):
             }),
             'category': forms.Select(attrs={
                 'class': 'form-input'
+            }),
+            'photo': forms.FileInput(attrs={
+                'class': 'form-input',
+                'accept': 'image/*'
             }),
             'tags': forms.TextInput(attrs={
                 'class': 'form-input',

@@ -10,7 +10,7 @@
     <h1 class="form-title">Crear Nuevo Evento</h1>
     <p class="form-subtitle">Completa la información de tu evento</p>
     
-    <form method="post">
+    <form method="post" enctype="multipart/form-data">
         {% csrf_token %}
         
         <!-- Nombre del evento -->
@@ -56,6 +56,18 @@
             {% if form.category.errors %}
                 <div class="error-message">{{ form.category.errors }}</div>
             {% endif %}
+        </div>
+        
+        <!-- Imagen del evento -->
+        <div class="form-group">
+            <label class="form-label">Imagen del evento</label>
+            {{ form.photo }}
+            {% if form.photo.errors %}
+                <div class="error-message">{{ form.photo.errors }}</div>
+            {% endif %}
+            <small style="color: #7f8c8d; display: block; margin-top: 4px;">
+                Formatos: JPG, PNG, GIF (máx. 5MB)
+            </small>
         </div>
         
         <!-- Tags -->
