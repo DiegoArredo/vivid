@@ -38,14 +38,14 @@ function initMap(eventosData) {
         // Inicializar mapa centrado en Santiago, Chile
         map = new maplibregl.Map({
             container: 'map',
-            style: 'https://demotiles.maplibre.org/style.json',
+            style: 'https://tiles.openfreemap.org/styles/liberty',
             center: [-70.6643, -33.4569], // [lng, lat]
             zoom: 13
         });
 
         // Cuando el mapa termine de cargar
         map.on('load', function() {
-            console.log('✅ Mapa cargado correctamente');
+            console.log('Mapa cargado correctamente');
             
             // Agregar controles de navegación
             map.addControl(new maplibregl.NavigationControl(), 'top-right');
