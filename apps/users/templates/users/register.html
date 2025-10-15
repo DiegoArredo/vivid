@@ -1,0 +1,22 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Registro</title>
+    <link rel="stylesheet" href="{% static 'users/css/base.css' %}">
+</head>
+<body>
+    <div class="login-container fade-in">
+        <h2>Regístrate</h2>
+        <form method="post">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button type="submit">Crear cuenta</button>
+        </form>
+        <div class="register-link">
+            ¿Ya tienes cuenta? <a href="{% url 'users:login' %}">Inicia sesión aquí</a>
+        </div>
+    </div>
+</body>
+</html>
