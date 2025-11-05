@@ -1,217 +1,189 @@
-// Configuración del mapa con MapLibre GL JS
-let map;
-let markers = [];
+/**
+ * map.js - Inicialización del mapa con MapLibre GL JS
+ * Incluye manejo de errores y fallbacks
+ */
 
-// Inicializar cuando el DOM esté listo
+// Verificar que MapLibre GL JS está cargado
+if (typeof maplibregl === 'undefined') {
+    console.error('MapLibre GL JS no está cargado. Verifica que base.html incluye el script.');
+}
+
 document.addEventListener('DOMContentLoaded', function() {
-    // Leer datos de eventos
-    const eventosDataElement = document.getElementById('eventos-data');
+    // Obtener el contenedor del mapa
+    const mapContainer = document.getElementById('map');
     
-    if (!eventosDataElement) {
-        console.warn('No se encontró el elemento eventos-data');
+    if (!mapContainer) {
+        console.error('Contenedor del mapa (#map) no encontrado');
         return;
     }
-    
+
+    // Verificar que maplibregl está disponible
+    if (typeof maplibregl === 'undefined') {
+        mapContainer.innerHTML = '<div style="padding: 20px; text-align: center; color: #e74c3c;">Error: MapLibre GL JS no está cargado. Verifica la conexión a internet.</div>';
+        return;
+    }
+
+    // Obtener datos de eventos desde el script JSON
     let eventosData = [];
     try {
-        eventosData = JSON.parse(eventosDataElement.textContent);
-    } catch (e) {
-        console.error('Error al parsear datos de eventos:', e);
-        return;
-    }
-    
-    // Inicializar mapa
-    initMap(eventosData);
-    
-    // Configurar clicks en event cards
-    setupEventCardClicks();
-});
-
-function initMap(eventosData) {
-    try {
-        // Verificar que maplibregl esté disponible
-        if (typeof maplibregl === 'undefined') {
-            console.error('MapLibre GL no está cargado');
-            return;
+        const dataScript = document.getElementById('eventos-data');
+        if (dataScript) {
+            eventosData = JSON.parse(dataScript.textContent);
+            console.log('Eventos cargados:', eventosData.length);
+        } else {
+            console.warn('No se encontró el script #eventos-data');
         }
-        
-        // Inicializar mapa centrado en Santiago, Chile
+    } catch (e) {
+        console.error('Error parseando datos de eventos:', e);
+    }
+
+    // Configuración del mapa
+    // Centro por defecto: Santiago de Chile
+    const defaultCenter = [-70.6693, -33.4489];
+    const defaultZoom = 12;
+
+    // Si hay eventos con coordenadas, centrar en el primero
+    let mapCenter = defaultCenter;
+    const eventosConCoords = eventosData.filter(e => e.lat && e.lng);
+    
+    if (eventosConCoords.length > 0) {
+        const firstEvent = eventosConCoords[0];
+        mapCenter = [firstEvent.lng, firstEvent.lat];
+        console.log('Centrando mapa en primer evento:', firstEvent.name);
+    }
+
+    // Inicializar el mapa
+    let map;
+    try {
         map = new maplibregl.Map({
             container: 'map',
-            style: 'https://tiles.openfreemap.org/styles/liberty',
-            center: [-70.6643, -33.4569], // [lng, lat]
-            zoom: 13
+            style: 'https://demotiles.maplibre.org/style.json',
+            center: mapCenter,
+            zoom: defaultZoom,
+            attributionControl: true
         });
 
-        // Cuando el mapa termine de cargar
+        console.log('Mapa inicializado correctamente');
+
+        // Agregar controles de navegación
+        map.addControl(new maplibregl.NavigationControl(), 'top-right');
+
+        // Esperar a que el mapa cargue completamente
         map.on('load', function() {
-            console.log('Mapa cargado correctamente');
+            console.log('Mapa cargado completamente');
             
-            // Agregar controles de navegación
-            map.addControl(new maplibregl.NavigationControl(), 'top-right');
-            
-            // Agregar marcadores de eventos
-            addEventMarkers(eventosData);
-        });
-        
-        // Manejar errores del mapa
-        map.on('error', function(e) {
-            console.error('Error del mapa:', e);
-        });
-        
-    } catch (error) {
-        console.error('Error al inicializar el mapa:', error);
-    }
-}
+            // Agregar marcadores para cada evento
+            eventosConCoords.forEach(function(evento) {
+                // Crear el marcador
+                const marker = new maplibregl.Marker({
+                    color: '#FF7B54' // Color naranja de Vivid
+                })
+                    .setLngLat([evento.lng, evento.lat])
+                    .addTo(map);
 
-function addEventMarkers(eventos) {
-    eventos.forEach(evento => {
-        if (evento.lat && evento.lng) {
-            // Crear elemento del marcador personalizado
-            const el = document.createElement('div');
-            el.className = 'custom-marker';
-            el.style.width = '30px';
-            el.style.height = '30px';
-            el.style.backgroundColor = '#FF7B54';
-            el.style.border = '3px solid white';
-            el.style.borderRadius = '50%';
-            el.style.cursor = 'pointer';
-            el.style.boxShadow = '0 2px 8px rgba(0,0,0,0.3)';
-            el.style.transition = 'transform 0.3s';
-            
-            // Efecto hover
-            el.addEventListener('mouseenter', function() {
-                el.style.transform = 'scale(1.2)';
-            });
-            
-            el.addEventListener('mouseleave', function() {
-                el.style.transform = 'scale(1)';
+                // Crear popup con información del evento
+                const popup = new maplibregl.Popup({
+                    offset: 25,
+                    closeButton: false
+                }).setHTML(`
+                    <div style="font-family: Arial, sans-serif; padding: 5px;">
+                        <strong style="color: #2c3e50; font-size: 14px;">${evento.name}</strong>
+                        <br>
+                        <a href="/evento/${evento.id}/" 
+                           style="color: #FF7B54; text-decoration: none; font-size: 12px; margin-top: 5px; display: inline-block;">
+                            Ver detalles →
+                        </a>
+                    </div>
+                `);
+
+                marker.setPopup(popup);
+
+                // Hacer el marcador clickeable
+                marker.getElement().style.cursor = 'pointer';
+                marker.getElement().addEventListener('click', function() {
+                    // Scroll a la tarjeta del evento en la lista
+                    scrollToEvent(evento.id);
+                });
             });
 
-            // Crear marcador
-            const marker = new maplibregl.Marker({element: el})
-                .setLngLat([evento.lng, evento.lat])
-                .addTo(map);
+            console.log(`${eventosConCoords.length} marcadores agregados al mapa`);
 
-            // Crear popup con información del evento
-            const popup = new maplibregl.Popup({
-                offset: 25,
-                closeButton: true,
-                closeOnClick: false
-            }).setHTML(`
-                <div style="padding: 10px;">
-                    <h4 style="margin: 0 0 8px 0; color: #333;">${evento.name}</h4>
-                    <button 
-                        onclick="scrollToEvent(${evento.id})"
-                        style="
-                            background: #FF7B54;
-                            color: white;
-                            border: none;
-                            padding: 8px 16px;
-                            border-radius: 20px;
-                            cursor: pointer;
-                            font-size: 12px;
-                            font-weight: 600;
-                        "
-                    >
-                        Ver evento
-                    </button>
-                </div>
-            `);
-
-            marker.setPopup(popup);
-
-            // Click en marcador muestra popup
-            el.addEventListener('click', function() {
-                marker.togglePopup();
-            });
-
-            // Guardar referencia del marcador
-            markers.push({
-                id: evento.id,
-                marker: marker,
-                popup: popup
-            });
-        }
-    });
-
-    // Si hay eventos, ajustar la vista del mapa
-    if (eventos.length > 0) {
-        const validEvents = eventos.filter(e => e.lat && e.lng);
-        
-        if (validEvents.length > 0) {
-            const bounds = new maplibregl.LngLatBounds();
-            validEvents.forEach(evento => {
-                bounds.extend([evento.lng, evento.lat]);
-            });
-            
-            if (!bounds.isEmpty()) {
+            // Si hay múltiples eventos, ajustar el zoom para mostrarlos todos
+            if (eventosConCoords.length > 1) {
+                const bounds = new maplibregl.LngLatBounds();
+                eventosConCoords.forEach(evento => {
+                    bounds.extend([evento.lng, evento.lat]);
+                });
                 map.fitBounds(bounds, {
                     padding: 50,
-                    maxZoom: 15
+                    maxZoom: 14
                 });
             }
+        });
+
+        // Manejar errores del mapa
+        map.on('error', function(e) {
+            console.error('Error en el mapa:', e);
+        });
+
+    } catch (error) {
+        console.error('Error inicializando el mapa:', error);
+        mapContainer.innerHTML = `
+            <div style="padding: 20px; text-align: center; color: #e74c3c;">
+                <p>Error al cargar el mapa</p>
+                <p style="font-size: 12px; color: #7f8c8d;">${error.message}</p>
+            </div>
+        `;
+    }
+
+    // Función para hacer scroll a un evento específico en la lista
+    window.scrollToEvent = function(eventId) {
+        const eventCard = document.querySelector(`[data-event-id="${eventId}"]`);
+        if (eventCard) {
+            eventCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            
+            // Resaltar temporalmente la tarjeta
+            eventCard.style.transition = 'background-color 0.3s ease';
+            eventCard.style.backgroundColor = 'rgba(255, 123, 84, 0.1)';
+            
+            setTimeout(() => {
+                eventCard.style.backgroundColor = '';
+            }, 2000);
+        }
+    };
+
+    // Función para mostrar un evento específico en el mapa
+    window.showEventOnMap = function(eventId, lat, lng) {
+        if (!map) {
+            console.warn('Mapa no disponible');
+            return;
+        }
+
+        if (lat && lng) {
+            map.flyTo({
+                center: [lng, lat],
+                zoom: 15,
+                duration: 1000
+            });
+        }
+    };
+});
+
+// Función de utilidad para verificar el estado del mapa (debugging)
+window.checkMapStatus = function() {
+    console.log('=== Estado del Mapa ===');
+    console.log('MapLibre GL cargado:', typeof maplibregl !== 'undefined');
+    console.log('Contenedor #map existe:', !!document.getElementById('map'));
+    console.log('Script #eventos-data existe:', !!document.getElementById('eventos-data'));
+    
+    const dataScript = document.getElementById('eventos-data');
+    if (dataScript) {
+        try {
+            const data = JSON.parse(dataScript.textContent);
+            console.log('Eventos en datos:', data.length);
+            console.log('Eventos con coordenadas:', data.filter(e => e.lat && e.lng).length);
+        } catch (e) {
+            console.error('Error parseando datos:', e);
         }
     }
-}
-
-// Función para mostrar evento en el mapa
-function showEventOnMap(eventoId) {
-    const markerData = markers.find(m => m.id === eventoId);
-    
-    if (markerData) {
-        const lngLat = markerData.marker.getLngLat();
-        
-        // Centrar el mapa en el marcador
-        map.flyTo({
-            center: [lngLat.lng, lngLat.lat],
-            zoom: 16,
-            duration: 1000
-        });
-        
-        // Mostrar el popup
-        setTimeout(() => {
-            markerData.marker.togglePopup();
-        }, 1000);
-    }
-}
-
-// Función para hacer scroll a un evento específico
-function scrollToEvent(eventoId) {
-    const eventCard = document.querySelector(`[data-event-id="${eventoId}"]`);
-    
-    if (eventCard) {
-        eventCard.scrollIntoView({ 
-            behavior: 'smooth', 
-            block: 'center' 
-        });
-        
-        // Resaltar la tarjeta temporalmente
-        eventCard.classList.add('highlighted');
-        setTimeout(() => {
-            eventCard.classList.remove('highlighted');
-        }, 2000);
-    }
-}
-
-// Configurar clicks en las tarjetas de eventos
-function setupEventCardClicks() {
-    const eventCards = document.querySelectorAll('.event-card');
-    
-    eventCards.forEach(card => {
-        card.addEventListener('click', function(e) {
-            // No hacer nada si se hizo click en el botón
-            if (e.target.closest('.attend-btn')) {
-                return;
-            }
-            
-            const eventId = parseInt(this.dataset.eventId);
-            if (eventId) {
-                showEventOnMap(eventId);
-            }
-        });
-        
-        // Cursor pointer para indicar que es clickeable
-        card.style.cursor = 'pointer';
-    });
-}
+};
