@@ -5,6 +5,7 @@
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'events/css/home.css' %}">
 <link rel="stylesheet" href="{% static 'events/css/event_card.css' %}">
+<link rel="stylesheet" href="{% static 'events/css/category-filter.css' %}">
 <style>
   /* Asegura que el mapa siempre tenga altura visible */
   .map-section { min-height: 420px; }
@@ -29,14 +30,29 @@
       <span class="search-icon">🔍</span>
     </div>
 
-    <!-- Filtros -->
-    <div class="filter-section">
-      <span class="filter-label">Filtrar por</span>
-      <button class="filter-btn active" data-filter="all">Todo</button>
-      <button class="filter-btn" data-filter="cercanos">Más Cercanos</button>
-      <button class="filter-btn" data-filter="recientes">Más Recientes</button>
-      <button class="filter-btn" data-filter="populares">Populares</button>
-    </div>
+        <!-- Filtros -->
+        <div class="filter-section">
+            <span class="filter-label">Filtrar por</span>
+            <button class="filter-btn {% if filter_active == 'all' or not filter_active %}active{% endif %}" data-filter="all">Todo</button>
+            <button class="filter-btn {% if filter_active == 'cercanos' %}active{% endif %}" data-filter="cercanos">Más Cercanos</button>
+            <button class="filter-btn {% if filter_active == 'recientes' %}active{% endif %}" data-filter="recientes">Más Recientes</button>
+            <button class="filter-btn {% if filter_active == 'populares' %}active{% endif %}" data-filter="populares">Populares</button>
+        </div>
+
+        <!-- Filtro de categorías -->
+        {% if categorias %}
+        <div class="category-filter">
+            <span class="filter-label">Categorías</span>
+            <select id="category-select" class="category-select">
+                <option value="">Todas las categorías</option>
+                {% for categoria in categorias %}
+                    <option value="{{ categoria.cat_id }}" {% if category_selected == categoria.cat_id|stringformat:"s" %}selected{% endif %}>
+                        {{ categoria.category }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+        {% endif %}
 
     <!-- Lista de eventos -->
     <div id="eventos-list">
