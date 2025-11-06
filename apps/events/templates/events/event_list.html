@@ -1,86 +1,178 @@
 {% extends 'events/base.html' %}
 {% load static %}
+{% load l10n %}  
 
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'events/css/home.css' %}">
 <link rel="stylesheet" href="{% static 'events/css/event_card.css' %}">
+<style>
+  /* Asegura que el mapa siempre tenga altura visible */
+  .map-section { min-height: 420px; }
+  #map { min-height: 420px; width: 100%; height: 100%; }
+  .event-card.selected {
+    border: 2px solid #111827;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+  }
+</style>
 {% endblock %}
+
 
 {% block content %}
 <div class="main-container">
-    <!-- Sidebar con lista de eventos -->
-    <div class="sidebar">
-        <!-- Barra de búsqueda -->
-        <div class="search-bar">
-            <span class="clear-search">✕</span>
-            <input 
-                type="text" 
-                placeholder="Buscar eventos..." 
-                id="search-input"
-            >
-            <span class="search-icon">🔍</span>
-        </div>
 
-        <!-- Filtros -->
-        <div class="filter-section">
-            <span class="filter-label">Filtrar por</span>
-            <button class="filter-btn active" data-filter="all">Todo</button>
-            <button class="filter-btn" data-filter="cercanos">Más Cercanos</button>
-            <button class="filter-btn" data-filter="recientes">Más Recientes</button>
-            <button class="filter-btn" data-filter="populares">Populares</button>
-        </div>
-
-        <!-- Lista de eventos -->
-        <div id="eventos-list">
-            {% for evento in eventos %}
-                {% include 'events/components/event_card.html' with evento=evento %}
-            {% empty %}
-                <p class="no-events">No hay eventos disponibles en este momento.</p>
-            {% endfor %}
-        </div>
+  <!-- Sidebar con lista de eventos -->
+  <div class="sidebar">
+    <!-- Barra de búsqueda -->
+    <div class="search-bar">
+      <span class="clear-search">✕</span>
+      <input type="text" placeholder="Buscar eventos..." id="search-input">
+      <span class="search-icon">🔍</span>
     </div>
 
-    <!-- Sección del mapa -->
-    <div class="map-section">
-        <div id="map"></div>
-        
-        <!-- Botón flotante para crear evento -->
-        <button 
-            class="add-event-btn" 
-            data-href="{% url 'events:event_create' %}"
-            title="Crear nuevo evento"
-        >
-            +
-        </button>
+    <!-- Filtros -->
+    <div class="filter-section">
+      <span class="filter-label">Filtrar por</span>
+      <button class="filter-btn active" data-filter="all">Todo</button>
+      <button class="filter-btn" data-filter="cercanos">Más Cercanos</button>
+      <button class="filter-btn" data-filter="recientes">Más Recientes</button>
+      <button class="filter-btn" data-filter="populares">Populares</button>
+    </div>
 
-        <script>
-        document.addEventListener("DOMContentLoaded", () => {
-            document.querySelectorAll(".add-event-btn").forEach(btn => {
-                btn.addEventListener("click", () => {
-                    window.location.href = btn.dataset.href;
-                });
-            });
+    <!-- Lista de eventos -->
+    <div id="eventos-list">
+      {% for evento in eventos %}
+        {% include 'events/components/event_card.html' with evento=evento %}
+      {% empty %}
+        <p class="no-events">No hay eventos disponibles en este momento.</p>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Sección del mapa -->
+  <div class="map-section">
+    <div id="map"></div>
+
+    <!-- Botón flotante para crear evento -->
+    <button
+      class="add-event-btn"
+      data-href="{% url 'events:event_create' %}"
+      title="Crear nuevo evento">+</button>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", () => {
+        document.querySelector(".add-event-btn")?.addEventListener("click", (e) => {
+          const href = e.currentTarget.dataset.href;
+          if (href) window.location.href = href;
         });
-        </script>
-    </div>
+      });
+    </script>
+  </div>
 </div>
-
-<!-- Data JSON para JavaScript -->
-<script id="eventos-data" type="application/json">
-[
-    {% for evento in eventos %}
-    {
-        "id": {{ evento.id }},
-        "name": "{{ evento.name|escapejs }}",
-        "lat": {% if evento.latitud %}{{ evento.latitud }}{% else %}null{% endif %},
-        "lng": {% if evento.longitud %}{{ evento.longitud }}{% else %}null{% endif %}
-    }{% if not forloop.last %},{% endif %}
-    {% endfor %}
-]
-</script>
 {% endblock %}
 
+<!-- JSON para el mapa -->
+<script id="eventos-data" type="application/json">
+[
+  {% for evento in eventos %}
+  {
+    "id": {{ evento.id }},
+    "name": "{{ evento.name|escapejs }}",
+    "location": "{{ evento.location|default:''|escapejs }}",
+    "lat": {% if evento.latitud != None %}{{ evento.latitud|floatformat:"6"|unlocalize }}{% else %}null{% endif %},
+    "lng": {% if evento.longitud != None %}{{ evento.longitud|floatformat:"6"|unlocalize }}{% else %}null{% endif %}
+  }{% if not forloop.last %},{% endif %}
+  {% endfor %}
+]
+</script>
+
 {% block extra_js %}
-<script src="{% static 'events/js/map.js' %}"></script>
-<script src="{% static 'events/js/filtros.js' %}"></script>
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  // Guardias
+  if (typeof maplibregl === "undefined") { console.error("[map] MapLibre no está cargado"); return; }
+  const mapEl = document.getElementById("map");
+  if (!mapEl) { console.error("[map] Falta #map"); return; }
+
+  // 1) Construir los eventos leyendo las cards del DOM
+  const eventos = [...document.querySelectorAll(".event-card")].map(card => {
+    const id  = Number(card.dataset.id || card.dataset.eventId);
+    const lat = parseFloat(card.dataset.lat);
+    const lng = parseFloat(card.dataset.lng);
+    const name = (card.querySelector(".event-title")?.textContent || "Evento").trim();
+    const location = (card.querySelector(".event-location")?.textContent || "").trim();
+    return { id, name, location, lat: Number.isFinite(lat) ? lat : null, lng: Number.isFinite(lng) ? lng : null };
+  });
+
+  const valid = eventos.filter(e => Number.isFinite(e.lat) && Number.isFinite(e.lng));
+  console.log("[map] eventos desde DOM:", eventos);
+  console.log("[map] válidos (con coords):", valid.length);
+
+  // 2) Crear mapa
+  const styleUrl = "https://demotiles.maplibre.org/style.json";
+  const fallbackCenter = [-70.6483, -33.4569]; // [lng, lat] Santiago
+  const map = new maplibregl.Map({
+    container: 'map',
+    style: styleUrl,
+    center: valid.length ? [valid[0].lng, valid[0].lat] : fallbackCenter, // [lng, lat]
+    zoom: valid.length ? 13 : 11
+  });
+  map.addControl(new maplibregl.NavigationControl(), 'top-right');
+
+  // Asegurar render
+  map.on("load", () => { map.resize(); setTimeout(() => map.resize(), 100); });
+
+  // 3) Marcadores
+  const markersById = new Map();
+  const bounds = new maplibregl.LngLatBounds();
+
+  valid.forEach(e => {
+    const marker = new maplibregl.Marker({ color: "#ff7a00" })
+      .setLngLat([e.lng, e.lat])   // ⚠️ siempre [lng, lat]
+      .setPopup(new maplibregl.Popup({ offset: 25 }).setHTML(`
+        <div style="padding:10px;max-width:240px">
+          <h4 style="margin:0 0 8px 0;color:#333;">${escapeHtml(e.name)}</h4>
+          ${e.location ? `<div style="margin:0 0 6px 0;color:#555;">${escapeHtml(e.location)}</div>` : ""}
+          <div style="font-size:12px;color:#666;">(${e.lat.toFixed(6)}, ${e.lng.toFixed(6)})</div>
+        </div>
+      `))
+      .addTo(map);
+
+    markersById.set(e.id, marker);
+    bounds.extend([e.lng, e.lat]);
+  });
+
+  map.on("load", () => {
+    if (!bounds.isEmpty() && valid.length >= 2) {
+      map.fitBounds(bounds, { padding: 60, maxZoom: 15, duration: 600 });
+    } else if (valid.length === 1) {
+      map.flyTo({ center: [valid[0].lng, valid[0].lat], zoom: 14 });
+      markersById.get(valid[0].id)?.togglePopup();
+    }
+  });
+
+  // 4) Click en tarjetas → centrar
+  document.querySelectorAll(".event-card").forEach(card => {
+    card.style.cursor = "pointer";
+    const id = Number(card.dataset.id || card.dataset.eventId);
+    const e = eventos.find(x => x.id === id);
+
+    card.addEventListener("click", (ev) => {
+      if (ev.target.closest(".details-btn")) return; // deja navegar al detalle
+      if (!e || !Number.isFinite(e.lat) || !Number.isFinite(e.lng)) return;
+
+      map.flyTo({ center: [e.lng, e.lat], zoom: 14 });
+      markersById.get(id)?.togglePopup();
+
+      document.querySelectorAll(".event-card").forEach(c => c.classList.remove("selected"));
+      card.classList.add("selected");
+    });
+  });
+
+  function escapeHtml(str) {
+    return String(str)
+      .replaceAll("&", "&amp;").replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&#039;");
+  }
+});
+</script>
 {% endblock %}

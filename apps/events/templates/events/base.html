@@ -1,118 +1,104 @@
-{% load static %}
 <!DOCTYPE html>
 <html lang="es">
+{% load static %}
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
-    <title>{% block title %}Vivid - Tu próxima aventura te espera{% endblock %}</title>
-    
-    <!-- MapLibre GL JS - Versión correcta desde UNPKG -->
-    <script src="https://unpkg.com/maplibre-gl@5.0.1/dist/maplibre-gl.js"></script>
-    <link href="https://unpkg.com/maplibre-gl@5.0.1/dist/maplibre-gl.css" rel="stylesheet" />
-    
-    <!-- CSS Base -->
-    <link rel="stylesheet" href="{% static 'events/css/base.css' %}">
-    <link rel="stylesheet" href="{% static 'events/css/navbar.css' %}">
-    
-    {% block extra_css %}{% endblock %}
-    
-    <style>
-        /* Estilos para mensajes de Django */
-        .messages {
-            position: fixed;
-            top: 100px;
-            right: 20px;
-            z-index: 9999;
-            max-width: 400px;
-        }
-        
-        .alert {
-            padding: 15px 20px;
-            margin-bottom: 10px;
-            border-radius: 8px;
-            background: white;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-            animation: slideInRight 0.3s ease;
-        }
-        
-        .alert-success {
-            border-left: 4px solid #4CAF50;
-            color: #2d6a2f;
-        }
-        
-        .alert-error {
-            border-left: 4px solid #f44336;
-            color: #c62828;
-        }
-        
-        @keyframes slideInRight {
-            from {
-                transform: translateX(400px);
-                opacity: 0;
-            }
-            to {
-                transform: translateX(0);
-                opacity: 1;
-            }
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
+  <title>{% block title %}Vivid - Tu próxima aventura te espera{% endblock %}</title>
+
+  <!-- Favicon opcional (evita 404) -->
+  <link rel="icon" href="{% static 'events/favicon.ico' %}" />
+
+  <!-- MapLibre GL JS (una sola vez, en el head) -->
+  <link href="https://unpkg.com/maplibre-gl@5.0.1/dist/maplibre-gl.css" rel="stylesheet" />
+  <script src="https://unpkg.com/maplibre-gl@5.0.1/dist/maplibre-gl.js"></script>
+
+  <!-- CSS Base -->
+  <link rel="stylesheet" href="{% static 'events/css/base.css' %}" />
+  <link rel="stylesheet" href="{% static 'events/css/navbar.css' %}" />
+
+  {% block extra_css %}{% endblock %}
+
+  <style>
+    /* Estilos para mensajes de Django */
+    .messages {
+      position: fixed;
+      top: 100px;
+      right: 20px;
+      z-index: 9999;
+      max-width: 400px;
+    }
+    .alert {
+      padding: 15px 20px;
+      margin-bottom: 10px;
+      border-radius: 8px;
+      background: white;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      animation: slideInRight 0.3s ease;
+    }
+    .alert-success { border-left: 4px solid #4CAF50; color: #2d6a2f; }
+    .alert-error   { border-left: 4px solid #f44336; color: #c62828; }
+
+    @keyframes slideInRight {
+      from { transform: translateX(400px); opacity: 0; }
+      to   { transform: translateX(0);     opacity: 1; }
+    }
+  </style>
 </head>
 <body>
-    <!-- Mensajes de Django -->
-    {% if messages %}
-    <div class="messages">
-        {% for message in messages %}
-        <div class="alert alert-{{ message.tags }}">
-            {{ message }}
-        </div>
-        {% endfor %}
+  <!-- Mensajes de Django -->
+  {% if messages %}
+  <div class="messages">
+    {% for message in messages %}
+      <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <!-- Header/Navbar -->
+  <header class="header">
+    <div class="logo-section">
+      <div class="logo">🚀</div>
+      <div class="logo-text">
+        <h1>Vivid</h1>
+        <p>Tu próxima aventura te espera</p>
+      </div>
     </div>
-    {% endif %}
+    <nav class="nav-menu">
+      <a href="{% url 'events:event_list' %}">Eventos</a>
+      <a href="#">Mis Eventos</a>
+      <a href="#">Calendario</a>
+      <a href="#">Sobre Nosotros</a>
+      {% if user.is_authenticated %}
+        <span style="color: white; font-size: 14px;">{{ user.username }}</span>
+      {% else %}
+        <a href="#">Iniciar Sesión</a>
+      {% endif %}
+      <div class="user-icon">
+        {% if user.is_authenticated %}
+          {{ user.username|first|upper }}
+        {% else %}
+          👤
+        {% endif %}
+      </div>
+    </nav>
+  </header>
 
-    <!-- Header/Navbar -->
-    <header class="header">
-        <div class="logo-section">
-            <div class="logo">🚀</div>
-            <div class="logo-text">
-                <h1>Vivid</h1>
-                <p>Tu próxima aventura te espera</p>
-            </div>
-        </div>
-        <nav class="nav-menu">
-            <a href="{% url 'events:event_list' %}">Eventos</a>
-            <a href="#">Mis Eventos</a>
-            <a href="#">Calendario</a>
-            <a href="#">Sobre Nosotros</a>
-            {% if user.is_authenticated %}
-                <span style="color: white; font-size: 14px;">{{ user.username }}</span>
-            {% else %}
-                <a href="#">Iniciar Sesión</a>
-            {% endif %}
-            <div class="user-icon">
-                {% if user.is_authenticated %}
-                    {{ user.username|first|upper }}
-                {% else %}
-                    👤
-                {% endif %}
-            </div>
-        </nav>
-    </header>
+  <!-- Contenido principal -->
+  {% block content %}{% endblock %}
 
-    <!-- Contenido principal -->
-    {% block content %}{% endblock %}
+  <!-- Auto-ocultar mensajes después de 5 segundos -->
+  <script>
+    setTimeout(function() {
+      const messages = document.querySelector('.messages');
+      if (messages) {
+        messages.style.animation = 'slideInRight 0.3s ease reverse';
+        setTimeout(() => messages.remove(), 300);
+      }
+    }, 5000);
+  </script>
 
-    <!-- Auto-ocultar mensajes después de 5 segundos -->
-    <script>
-        setTimeout(function() {
-            const messages = document.querySelector('.messages');
-            if (messages) {
-                messages.style.animation = 'slideInRight 0.3s ease reverse';
-                setTimeout(() => messages.remove(), 300);
-            }
-        }, 5000);
-    </script>
-    
-    <!-- Scripts personalizados -->
-    {% block extra_js %}{% endblock %}
+  <!-- Scripts de página -->
+  {% block extra_js %}{% endblock %}
 </body>
 </html>

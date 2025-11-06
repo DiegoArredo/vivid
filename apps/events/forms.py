@@ -4,7 +4,7 @@ from .models import Event, Category
 class EventForm(forms.ModelForm):
     class Meta:
         model = Event
-        fields = ['name', 'description', 'date', 'location', 'category', 'photo', 'tags']
+        fields = ['name', 'description','latitud','longitud','date', 'location', 'category', 'photo', 'tags']
         widgets = {
             'name': forms.TextInput(attrs={
                 'class': 'form-input',
@@ -33,5 +33,11 @@ class EventForm(forms.ModelForm):
             'tags': forms.TextInput(attrs={
                 'class': 'form-input',
                 'placeholder': 'Ej: música concierto rock'
-            })
+            }),
+            'latitud': forms.NumberInput(attrs={
+                'class': 'form-input','step': '0.000001', 
+                'placeholder': '-33.456940'}),
+            'longitud': forms.NumberInput(attrs={
+                'class': 'form-input','step': '0.000001', 
+                'placeholder': '-70.648270'})
         }
