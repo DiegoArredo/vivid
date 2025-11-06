@@ -1,4 +1,6 @@
-/* Tarjeta de evento */
+/* =========================================
+   TARJETA DE EVENTO
+========================================= */
 
 .event-card {
     background: var(--white);
@@ -19,9 +21,13 @@
 .event-card.highlighted {
     background: #fff3e0;
     border: 2px solid var(--primary-color);
+    transform: scale(1.02);
 }
 
-/* Imagen del evento */
+/* =========================================
+   IMAGEN DEL EVENTO
+========================================= */
+
 .event-image {
     width: 260px;
     height: 180px;
@@ -38,6 +44,7 @@
 }
 
 /* Imagen por defecto */
+
 .default-image {
     width: 100%;
     height: 100%;
@@ -68,12 +75,8 @@
 }
 
 @keyframes float {
-    0%, 100% {
-        transform: translateY(0);
-    }
-    50% {
-        transform: translateY(-10px);
-    }
+    0%, 100% { transform: translateY(0); }
+    50%      { transform: translateY(-10px); }
 }
 
 .hill {
@@ -85,7 +88,10 @@
     border-radius: 50% 50% 0 0;
 }
 
-/* Detalles del evento */
+/* =========================================
+   DETALLES DEL EVENTO
+========================================= */
+
 .event-details {
     flex: 1;
     display: flex;
@@ -147,7 +153,10 @@
     -webkit-box-orient: vertical;
 }
 
-/* Tags/Etiquetas */
+/* =========================================
+   TAGS
+========================================= */
+
 .event-tags {
     display: flex;
     gap: 8px;
@@ -167,17 +176,14 @@
 
 .tag:hover {
     background: var(--primary-color);
-    color: var(--white) !important;  /* Forzar texto blanco en hover */
-}
-
-/* Asegurar que el hover de los tags funcione dentro del link */
-a.event-card-link .tag:hover {
-    background: var(--primary-color) !important;
     color: var(--white) !important;
-    border-color: var(--primary-color) !important;
 }
 
-/* Botón asistir */
+/* =========================================
+   BOTONES
+========================================= */
+
+/* Botón asistir (ya existente) */
 .attend-btn {
     background: var(--primary-color);
     color: var(--white);
@@ -203,15 +209,46 @@ a.event-card-link .tag:hover {
     transform: translateY(0);
 }
 
-.attend-btn.attending {
-    background: #4CAF50;
+/* Botón "Ver detalles" – EXACTAMENTE igual a attend-btn, pero celeste */
+.details-btn {
+    background: #3ba7ff;  /* CELESTE */
+    color: var(--white);
+    border: none;
+    padding: 12px 30px;
+    border-radius: 25px;
+    cursor: pointer;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: background 0.3s, transform 0.2s;
+    align-self: flex-start;
+    font-size: 14px;
+    text-decoration: none !important;
 }
 
-.attend-btn.attending:hover {
-    background: #45a049;
+.details-btn:hover {
+    background: #1d94fa;
+    transform: translateY(-2px);
 }
 
-/* Responsive */
+.details-btn:active {
+    transform: translateY(0);
+}
+
+.details-btn:link,
+.details-btn:visited,
+.details-btn:hover,
+.details-btn:active,
+.details-btn:focus {
+    text-decoration: none !important;
+    color: var(--white) !important;
+}
+
+/* =========================================
+   RESPONSIVE
+========================================= */
+
 @media (max-width: 768px) {
     .event-card {
         flex-direction: column;
@@ -224,19 +261,18 @@ a.event-card-link .tag:hover {
     }
 }
 
-/* Clase para resaltar evento */
-.event-card.highlighted {
-    background: #fff3e0;
-    border: 2px solid var(--primary-color);
-    transform: scale(1.02);
-}
+/* =========================================
+   MARCADOR DEL MAPA
+========================================= */
 
-/* Marcador personalizado del mapa */
 .custom-marker {
     transition: transform 0.3s;
 }
 
-/* Estilos para hacer la card clickeable */
+/* =========================================
+   CARDS COMO LINKS (si usas event-card-link en otro contexto)
+========================================= */
+
 a.event-card-link {
     text-decoration: none !important;
     color: inherit !important;
@@ -244,41 +280,10 @@ a.event-card-link {
     transition: transform 0.3s ease;
 }
 
-a.event-card-link:hover,
-a.event-card-link:visited,
-a.event-card-link:active,
-a.event-card-link:focus {
-    text-decoration: none !important;
-    color: inherit !important;
-}
-
 a.event-card-link:hover .event-card {
     box-shadow: 0 8px 24px rgba(0,0,0,0.15);
 }
 
-/* Sobrescribir TODOS los textos dentro del link */
 a.event-card-link * {
-    text-decoration: none !important;
-}
-
-a.event-card-link .event-title {
-    color: var(--text-dark) !important;
-    text-decoration: none !important;
-}
-
-a.event-card-link .event-meta,
-a.event-card-link .event-location,
-a.event-card-link .event-organizer {
-    color: var(--text-medium) !important;
-    text-decoration: none !important;
-}
-
-a.event-card-link .event-description {
-    color: var(--text-light) !important;
-    text-decoration: none !important;
-}
-
-a.event-card-link .tag {
-    color: var(--primary-color) !important;
     text-decoration: none !important;
 }

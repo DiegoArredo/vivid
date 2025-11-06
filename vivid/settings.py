@@ -9,6 +9,9 @@ https://docs.djangoproject.com/en/5.1/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.1/ref/settings/
 """
+import mimetypes
+mimetypes.add_type("application/javascript", ".js", True)
+mimetypes.add_type("text/css", ".css", True)
 
 from pathlib import Path
 
@@ -105,6 +108,7 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 
+
 # Internationalization
 # https://docs.djangoproject.com/en/5.1/topics/i18n/
 
@@ -137,3 +141,9 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 # Store events images
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
+
+
+
+LOGIN_URL = '/users/login/'          # <-- la URL donde está tu login real
+LOGIN_REDIRECT_URL = '/'             # a dónde volver tras iniciar sesión
+LOGOUT_REDIRECT_URL = '/'            # a dónde volver tras cerrar sesión

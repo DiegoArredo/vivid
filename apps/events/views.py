@@ -4,6 +4,7 @@ from django.contrib import messages
 from django.http import HttpResponse
 from .models import Event
 from .forms import EventForm
+from .utils import geocode_address  
 
 
 # Vista de testeo css y estilos de home
@@ -31,43 +32,38 @@ def event_list(request):
     
     return render(request, 'events/event_list.html', context)
 
-# Vista para crear nuevo evento
-#@login_required -> Login se hará en futuras iteraciones
+
+
+#@login_required(login_url='/users/login/')
 def event_create(request):
-    if request.method == 'POST':
-        form = EventForm(request.POST, request.FILES) 
-        
+    if request.method == "POST":
+        form = EventForm(request.POST, request.FILES)
         if form.is_valid():
-            evento = form.save(commit=False)
+            ev = form.save(commit=False)
+            ev.owner = request.user
 
-            if evento.location:
-                # Aquí llamaríamos a una API de geocoding
-                # Por ahora, dejar en null (el modelo permite null=True, blank=True)
-                pass
-        
-            # Temporal: asignar un usuario por defecto
-            # Cuando se implemente login, usa: evento.owner = request.user
-            if request.user.is_authenticated:
-                evento.owner = request.user
+            # Si no hay coords, intenta geocodificar a partir de location
+            if ev.latitud is None or ev.longitud is None:
+                lat, lng = geocode_address(ev.location)
+                if lat is not None and lng is not None:
+                    ev.latitud = lat
+                    ev.longitud = lng
+                else:
+                    messages.warning(
+                        request,
+                        "No se pudo geocodificar la dirección. Se guardará sin coordenadas (no se verá en el mapa)."
+                    )
 
-            # Asignar al primer usuario existente (solo para testing)    
-            else:
-                from django.contrib.auth import get_user_model
-                User = get_user_model()
-                evento.owner = User.objects.first()
-                
-                if not evento.owner:
-                    messages.error(request, 'No hay usuarios en el sistema.')
-                    return redirect('events:event_create')
-            
-            evento.save()
-            messages.success(request, f'Evento "{evento.name}" creado exitosamente!')
-            return redirect('events:event_list')
+            ev.save()
+            messages.success(request, "Evento creado correctamente.")
+            return redirect("events:event_list")
+        else:
+            messages.error(request, "Revisa el formulario.")
     else:
         form = EventForm()
-    
-    context = {'form': form}
-    return render(request, 'events/event_create.html', context)
+
+    return render(request, "events/event_create.html", {"form": form})
+
 
 # Vista de detalle: muestra toda la información de un evento específico
 def event_detail(request, event_id):
