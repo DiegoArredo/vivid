@@ -31,12 +31,12 @@
     </div>
 
         <!-- Filtros -->
-        <div class="filter-section">
+        <div id="filter-section" class="filter-section">
             <span class="filter-label">Filtrar por</span>
-            <button class="filter-btn {% if filter_active == 'all' or not filter_active %}active{% endif %}" data-filter="all">Todo</button>
-            <button class="filter-btn {% if filter_active == 'cercanos' %}active{% endif %}" data-filter="cercanos">Más Cercanos</button>
-            <button class="filter-btn {% if filter_active == 'recientes' %}active{% endif %}" data-filter="recientes">Más Recientes</button>
-            <button class="filter-btn {% if filter_active == 'populares' %}active{% endif %}" data-filter="populares">Populares</button>
+            <button class="filter-btn active" data-filter="all">Todo</button>
+            <button class="filter-btn " data-filter="cercanos">Más Cercanos</button>
+            <button class="filter-btn " data-filter="recientes">Más Recientes</button>
+            <button class="filter-btn " data-filter="populares">Populares</button>
         </div>
 
         <!-- Filtro de categorías -->
@@ -44,9 +44,9 @@
         <div class="category-filter">
             <span class="filter-label">Categorías</span>
             <select id="category-select" class="category-select">
-                <option value="">Todas las categorías</option>
+                <option class="category-option" value="">Todas las categorías</option>
                 {% for categoria in categorias %}
-                    <option value="{{ categoria.cat_id }}" {% if category_selected == categoria.cat_id|stringformat:"s" %}selected{% endif %}>
+                    <option class="category-option" value="{{ categoria.cat_id }}" {% if category_selected == categoria.cat_id|stringformat:"s" %}selected{% endif %}>
                         {{ categoria.category }}
                     </option>
                 {% endfor %}
@@ -101,95 +101,184 @@
 ]
 </script>
 
+
 {% block extra_js %}
 <script>
-document.addEventListener("DOMContentLoaded", () => {
-  // Guardias
-  if (typeof maplibregl === "undefined") { console.error("[map] MapLibre no está cargado"); return; }
-  const mapEl = document.getElementById("map");
-  if (!mapEl) { console.error("[map] Falta #map"); return; }
+// === Variables y helpers globales ===
+window.vividMap = null;
+window.vividMarkersById = new Map();
 
-  // 1) Construir los eventos leyendo las cards del DOM
-  const eventos = [...document.querySelectorAll(".event-card")].map(card => {
+/**
+ * Escapa HTML para usar en popups de forma segura
+ */
+window.escapeHtml = function(str) {
+  return String(str)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+};
+
+/**
+ * Lee los eventos directamente desde las .event-card del DOM
+ * (sirve tanto al cargar la página como después de filtrar/buscar)
+ */
+window.getEventsFromDOM = function() {
+  return [...document.querySelectorAll(".event-card")].map(card => {
     const id  = Number(card.dataset.id || card.dataset.eventId);
     const lat = parseFloat(card.dataset.lat);
     const lng = parseFloat(card.dataset.lng);
     const name = (card.querySelector(".event-title")?.textContent || "Evento").trim();
     const location = (card.querySelector(".event-location")?.textContent || "").trim();
-    return { id, name, location, lat: Number.isFinite(lat) ? lat : null, lng: Number.isFinite(lng) ? lng : null };
+    return {
+      id,
+      name,
+      location,
+      lat: Number.isFinite(lat) ? lat : null,
+      lng: Number.isFinite(lng) ? lng : null,
+    };
   });
+};
 
+/**
+ * Crea/actualiza los marcadores del mapa según las cards visibles
+ */
+window.updateMapMarkers = function() {
+  if (!window.vividMap) {
+    console.warn("[map] mapa no inicializado");
+    return;
+  }
+
+  // Limpiar marcadores anteriores
+  window.vividMarkersById.forEach(marker => marker.remove());
+  window.vividMarkersById.clear();
+
+  const eventos = window.getEventsFromDOM();
   const valid = eventos.filter(e => Number.isFinite(e.lat) && Number.isFinite(e.lng));
   console.log("[map] eventos desde DOM:", eventos);
   console.log("[map] válidos (con coords):", valid.length);
 
-  // 2) Crear mapa
-  const styleUrl = "https://tiles.openfreemap.org/styles/liberty";
-  const fallbackCenter = [-70.6483, -33.4569]; // [lng, lat] Santiago
-  const map = new maplibregl.Map({
-    container: 'map',
-    style: styleUrl,
-    center: valid.length ? [valid[0].lng, valid[0].lat] : fallbackCenter, // [lng, lat]
-    zoom: valid.length ? 13 : 11
-  });
-  map.addControl(new maplibregl.NavigationControl(), 'top-right');
+  if (!valid.length) {
+    // Si no hay eventos con coordenadas, recentramos en Santiago
+    const fallbackCenter = [-70.6483, -33.4569];
+    window.vividMap.flyTo({ center: fallbackCenter, zoom: 11 });
+    return;
+  }
 
-  // Asegurar render
-  map.on("load", () => { map.resize(); setTimeout(() => map.resize(), 100); });
-
-  // 3) Marcadores
-  const markersById = new Map();
   const bounds = new maplibregl.LngLatBounds();
 
   valid.forEach(e => {
     const marker = new maplibregl.Marker({ color: "#ff7a00" })
-      .setLngLat([e.lng, e.lat])   // ⚠️ siempre [lng, lat]
-      .setPopup(new maplibregl.Popup({ offset: 25 }).setHTML(`
-        <div style="padding:10px;max-width:240px">
-          <h4 style="margin:0 0 8px 0;color:#333;">${escapeHtml(e.name)}</h4>
-          ${e.location ? `<div style="margin:0 0 6px 0;color:#555;">${escapeHtml(e.location)}</div>` : ""}
-          <div style="font-size:12px;color:#666;">(${e.lat.toFixed(6)}, ${e.lng.toFixed(6)})</div>
-        </div>
-      `))
-      .addTo(map);
+      .setLngLat([e.lng, e.lat]) // [lng, lat]
+      .setPopup(
+        new maplibregl.Popup({ offset: 25 }).setHTML(`
+          <div style="padding:10px;max-width:240px">
+            <h4 style="margin:0 0 8px 0;color:#333;">${window.escapeHtml(e.name)}</h4>
+            ${
+              e.location
+                ? `<div style="margin:0 0 6px 0;color:#555;">${window.escapeHtml(e.location)}</div>`
+                : ""
+            }
+            <div style="font-size:12px;color:#666;">(${e.lat.toFixed(6)}, ${e.lng.toFixed(6)})</div>
+          </div>
+        `)
+      )
+      .addTo(window.vividMap);
 
-    markersById.set(e.id, marker);
+    window.vividMarkersById.set(e.id, marker);
     bounds.extend([e.lng, e.lat]);
   });
 
-  map.on("load", () => {
-    if (!bounds.isEmpty() && valid.length >= 2) {
-      map.fitBounds(bounds, { padding: 60, maxZoom: 15, duration: 600 });
-    } else if (valid.length === 1) {
-      map.flyTo({ center: [valid[0].lng, valid[0].lat], zoom: 14 });
-      markersById.get(valid[0].id)?.togglePopup();
-    }
-  });
+  // Ajustar vista según cantidad de eventos
+  if (valid.length >= 2) {
+    window.vividMap.fitBounds(bounds, {
+      padding: 60,
+      maxZoom: 15,
+      duration: 600,
+    });
+  } else if (valid.length === 1) {
+    window.vividMap.flyTo({
+      center: [valid[0].lng, valid[0].lat],
+      zoom: 14,
+    });
+    window.vividMarkersById.get(valid[0].id)?.togglePopup();
+  }
+};
 
-  // 4) Click en tarjetas → centrar
+/**
+ * Vuelve a asociar los listeners de click a las cards
+ * (útil cuando se re-renderiza la lista por filtros/búsqueda)
+ */
+window.attachCardClickListeners = function() {
+  // Primero clonar para limpiar posibles listeners anteriores
   document.querySelectorAll(".event-card").forEach(card => {
     card.style.cursor = "pointer";
+    const newCard = card.cloneNode(true);
+    card.replaceWith(newCard);
+  });
+
+  // Re-asignar listeners sobre los nuevos nodos
+  document.querySelectorAll(".event-card").forEach(card => {
     const id = Number(card.dataset.id || card.dataset.eventId);
-    const e = eventos.find(x => x.id === id);
+    const lat = parseFloat(card.dataset.lat);
+    const lng = parseFloat(card.dataset.lng);
 
-    card.addEventListener("click", (ev) => {
+    card.addEventListener("click", ev => {
       if (ev.target.closest(".details-btn")) return; // deja navegar al detalle
-      if (!e || !Number.isFinite(e.lat) || !Number.isFinite(e.lng)) return;
+      if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
 
-      map.flyTo({ center: [e.lng, e.lat], zoom: 14 });
-      markersById.get(id)?.togglePopup();
+      window.vividMap.flyTo({ center: [lng, lat], zoom: 14 });
+      window.vividMarkersById.get(id)?.togglePopup();
 
       document.querySelectorAll(".event-card").forEach(c => c.classList.remove("selected"));
       card.classList.add("selected");
     });
   });
+};
 
-  function escapeHtml(str) {
-    return String(str)
-      .replaceAll("&", "&amp;").replaceAll("<", "&lt;")
-      .replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&#039;");
+document.addEventListener("DOMContentLoaded", () => {
+  // Guardias
+  if (typeof maplibregl === "undefined") {
+    console.error("[map] MapLibre no está cargado");
+    return;
   }
+  const mapEl = document.getElementById("map");
+  if (!mapEl) {
+    console.error("[map] Falta #map");
+    return;
+  }
+
+  // === Aquí mantenemos TU mapa original (estilo liberty) ===
+  const styleUrl = "https://tiles.openfreemap.org/styles/liberty";
+  const fallbackCenter = [-70.6483, -33.4569]; // Santiago
+
+  window.vividMap = new maplibregl.Map({
+    container: "map",
+    style: styleUrl,
+    center: fallbackCenter,
+    zoom: 11,
+  });
+  window.vividMap.addControl(new maplibregl.NavigationControl(), "top-right");
+
+  window.vividMap.on("load", () => {
+    window.vividMap.resize();
+    setTimeout(() => window.vividMap.resize(), 100);
+
+    // Al cargar el mapa por primera vez:
+    window.updateMapMarkers();
+    window.attachCardClickListeners();
+  });
+
+  // Botón flotante para crear evento (lo mantengo igual)
+  document.querySelector(".add-event-btn")?.addEventListener("click", e => {
+    const href = e.currentTarget.dataset.href;
+    if (href) window.location.href = href;
+  });
 });
 </script>
+
+{# Ajusta el nombre al archivo real: filtros.js o filter.js según tu repo #}
 <script src="{% static 'events/js/filtros.js' %}"></script>
 {% endblock %}
+

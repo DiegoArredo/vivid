@@ -1,11 +1,13 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from .models import Event
 from .forms import EventForm
 from .utils import geocode_address  
-
+import json
+import math
+from django.db.models import Q, Count
 
 # Vista de testeo css y estilos de home
 #def test_view(request):
@@ -20,111 +22,160 @@ from .utils import geocode_address
 #    return render(request, 'events/test_card.html')
 
 
-def event_list(request):
-    """
-    Vista principal: muestra la lista de eventos con mapa
-    Soporta filtros: cercanos, recientes, populares, búsqueda y categorías
-    """
-    from django.db.models import Count, Q
-    from decimal import Decimal
-    import math
-    
-    # Obtener parámetros de filtrado
-    filter_type = request.GET.get('filter', 'all')
-    search_query = request.GET.get('search', '').strip()
-    category_id = request.GET.get('category', None)
-    
-    # Query base
-    eventos = Event.objects.all().select_related('owner', 'category')
-    
-    # Aplicar búsqueda por texto
-    if search_query:
-        eventos = eventos.filter(
-            Q(name__icontains=search_query) |
-            Q(description__icontains=search_query) |
-            Q(location__icontains=search_query) |
-            Q(tags__icontains=search_query)
-        )
-    
-    # Aplicar filtro por categoría
-    if category_id:
-        try:
-            eventos = eventos.filter(category_id=category_id)
-        except ValueError:
-            pass
-    
-    # Aplicar ordenamiento según el filtro
-    if filter_type == 'recientes':
-        # Ordenar por fecha más reciente
-        eventos = eventos.order_by('-date')
-        
-    elif filter_type == 'populares':
-        # Ordenar por número de asistentes (popularidad)
-        eventos = eventos.annotate(
-            num_attendees=Count('attendees')
-        ).order_by('-num_attendees', '-date')
-        
-    elif filter_type == 'cercanos':
-        # Ordenar por cercanía
-        # Filtrar eventos con coordenadas
-        eventos_con_coords = eventos.filter(
-            latitud__isnull=False,
-            longitud__isnull=False
-        )
-        
-        # Intentar obtener la ubicación del usuario desde los parámetros
-        user_lat = request.GET.get('lat')
-        user_lng = request.GET.get('lng')
-        
-        if user_lat and user_lng:
-            try:
-                user_lat = float(user_lat)
-                user_lng = float(user_lng)
-                
-                # Calcular distancia para cada evento y ordenar
-                eventos_list = list(eventos_con_coords)
-                for evento in eventos_list:
-                    if evento.latitud and evento.longitud:
-                        # Cálculo simple de distancia usando la fórmula de Haversine
-                        lat1, lon1 = math.radians(user_lat), math.radians(user_lng)
-                        lat2, lon2 = math.radians(float(evento.latitud)), math.radians(float(evento.longitud))
-                        
-                        dlat = lat2 - lat1
-                        dlon = lon2 - lon1
-                        
-                        a = math.sin(dlat/2)**2 + math.cos(lat1) * math.cos(lat2) * math.sin(dlon/2)**2
-                        c = 2 * math.asin(math.sqrt(a))
-                        r = 6371  # Radio de la Tierra en kilómetros
-                        
-                        evento.distance = c * r
-                    else:
-                        evento.distance = float('inf')
-                
-                eventos = sorted(eventos_list, key=lambda x: x.distance)
-            except (ValueError, AttributeError, TypeError):
-                # Si hay error, ordenar por fecha
-                eventos = eventos_con_coords.order_by('-date')
-        else:
-            # Sin ubicación del usuario, mostrar eventos con coordenadas ordenados por fecha
-            eventos = eventos_con_coords.order_by('-date')
-    else:
-        # Filtro "all" o por defecto
-        eventos = eventos.order_by('-date')
-    
-    # Obtener todas las categorías para el filtro
-    from .models import Category
-    categorias = Category.objects.all()
-    
-    context = {
-        'eventos': eventos,
-        'categorias': categorias,
-        'filter_active': filter_type,
-        'search_query': search_query,
-        'category_selected': category_id,
-    }
-    
-    return render(request, 'events/event_list.html', context)
 
+
+def event_list(request):
+    if request.method == "POST":
+
+        try:
+            data = json.loads(request.body.decode('utf-8'))
+        except (json.JSONDecodeError, UnicodeDecodeError):
+            return JsonResponse({"error": "JSON inválido"}, status=400)
+
+        # Guardar valores en variables
+        filter_type = data.get('filterType')          
+        search_value = data.get('searchValue')        
+        category_id = data.get('categoryId')          
+
+        if not search_value:    
+            search_value = None
+        #convertir category_id a int
+        try:
+            category_id = int(category_id) if category_id is not None else None
+        except (ValueError, TypeError):
+            category_id = None
+
+        # DEbug
+        print("filter_type:", filter_type)
+        print("search_value:", search_value)
+        print("category_id:", category_id)
+
+
+        
+        # Obtener parámetros de filtrado        
+        # Query base
+        eventos = Event.objects.all().select_related('owner', 'category')
+        
+        # Aplicar búsqueda por texto
+        if search_value:
+            eventos = eventos.filter(
+                Q(name__icontains=search_value) |
+                Q(description__icontains=search_value) |
+                Q(location__icontains=search_value) |
+                Q(tags__icontains=search_value)
+            )
+        
+        # Aplicar filtro por categoría
+        if category_id:
+            try:
+                eventos = eventos.filter(category_id=category_id)
+            except ValueError:
+                pass
+        
+        # Aplicar ordenamiento según el filtro
+        if filter_type == 'recientes':
+            # Ordenar por fecha más reciente
+            eventos = eventos.order_by('date')
+            
+        elif filter_type == 'populares':
+            # Ordenar por número de asistentes (popularidad)
+            eventos = eventos.annotate(
+                num_attendees=Count('attendees')
+            ).order_by('-num_attendees')
+        else:
+        # Filtro "all" o por defecto
+            eventos = eventos
+
+
+          # Serializar eventos para JSON (asegurando que las fechas sean strings)
+        events_data = []
+        for ev in eventos:
+            events_data.append({
+                "id": ev.id,
+                "name": ev.name,
+                "description": ev.description,
+                "location": ev.location,
+                "date": ev.date.isoformat() if getattr(ev, "date", None) else None,
+                "latitud": str(ev.latitud) if ev.latitud else None,
+                "longitud": str(ev.longitud) if ev.longitud else None,
+                "category_id": ev.category_id,
+                "category_name": ev.category.category if getattr(ev, "category", None) else None,
+                "owner_id": ev.owner_id,
+                "owner_username": ev.owner.username if getattr(ev, "owner", None) else None,
+            })
+
+        response = {"events": events_data}
+        return JsonResponse(response, status=200)
+    # elif filter_type == 'cercanos':
+    #     # Ordenar por cercanía
+    #     # Filtrar eventos con coordenadas
+    #     eventos_con_coords = eventos.filter(
+    #         latitud__isnull=False,
+    #         longitud__isnull=False
+    #     )
+        
+    #     # Intentar obtener la ubicación del usuario desde los parámetros
+    #     user_lat = request.GET.get('lat')
+    #     user_lng = request.GET.get('lng')
+        
+    #     if user_lat and user_lng:
+    #         try:
+    #             user_lat = float(user_lat)
+    #             user_lng = float(user_lng)
+                
+    #             # Calcular distancia para cada evento y ordenar
+    #             eventos_list = list(eventos_con_coords)
+    #             for evento in eventos_list:
+    #                 if evento.latitud and evento.longitud:
+    #                     # Cálculo simple de distancia usando la fórmula de Haversine
+    #                     lat1, lon1 = math.radians(user_lat), math.radians(user_lng)
+    #                     lat2, lon2 = math.radians(float(evento.latitud)), math.radians(float(evento.longitud))
+                        
+    #                     dlat = lat2 - lat1
+    #                     dlon = lon2 - lon1
+                        
+    #                     a = math.sin(dlat/2)**2 + math.cos(lat1) * math.cos(lat2) * math.sin(dlon/2)**2
+    #                     c = 2 * math.asin(math.sqrt(a))
+    #                     r = 6371  # Radio de la Tierra en kilómetros
+                        
+    #                     evento.distance = c * r
+    #                 else:
+    #                     evento.distance = float('inf')
+                
+    #             eventos = sorted(eventos_list, key=lambda x: x.distance)
+    #         except (ValueError, AttributeError, TypeError):
+    #             # Si hay error, ordenar por fecha
+    #             eventos = eventos_con_coords.order_by('-date')
+    #     else:
+    #         # Sin ubicación del usuario, mostrar eventos con coordenadas ordenados por fecha
+    #         eventos = eventos_con_coords.order_by('-date')
+   
+    #Obtener eventos
+    else:
+        eventos = Event.objects.all().select_related('owner', 'category')
+        # # Obtener todas las categorías para el filtro
+        from .models import Category
+        categorias = Category.objects.all()
+        
+        context = {
+            'eventos': eventos,
+            'categorias': categorias
+        }
+        
+        return render(request, 'events/event_list.html', context)
+
+# def event_list_filtered(request):
+
+    
+#     # Obtener parámetros de filtrado
+#     filter_type = request.GET.get('filter', 'all')
+#     search_query = request.GET.get('search', '').strip()
+#     category_id = request.GET.get('category', None)
+    
+#     if request.method == "POST":
+#         filter_type = request.POST.get("filter_type")
+#         category_id = request.POST.get("category_id")
+        
 
 
 #@login_required(login_url='/users/login/')
