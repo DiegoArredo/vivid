@@ -201,37 +201,123 @@ document.addEventListener('DOMContentLoaded', function() {
 // ----------------------------
 
 // Crea el HTML de una card a partir del objeto evento (respuesta del servidor)
+// Crea el HTML de una card a partir del objeto evento (respuesta del servidor)
 const createEventCardHTML = (ev) => {
-        // Campos esperados: id, name, description, location, date, latitud, longitud, category_name, owner_username, photo
-        const id = ev.id || '';
-        const name = ev.name || '';
-        const description = ev.description || '';
-        const location = ev.location || '';
-        const dateText = ev.date ? (new Date(ev.date)).toLocaleString('es-CL', { year:'numeric', month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' }) : '';
-        const lat = ev.latitud != null ? ev.latitud : '';
-        const lng = ev.longitud != null ? ev.longitud : '';
-        const owner = ev.owner_username || 'Organizador desconocido';
-        const category = ev.category_name || 'Sin categoría';
-        const photo = ev.photo || '';
+    console.log('[DEBUG] createEventCardHTML llamado con:', ev);
+    // Campos esperados: id, name, description, location, date,
+    // latitud, longitud, owner_username, distancia, tags, photo
+    const id          = ev.id ?? '';
+    const name        = ev.name ?? '';
+    const description = ev.description ?? '';
+    const location    = ev.location ?? '';
+    const owner       = ev.owner_username ?? 'Organizador desconocido';
 
-        return `
-            <div class="event-card" data-id="${escapeHtml(id)}" data-lat="${escapeHtml(lat)}" data-lng="${escapeHtml(lng)}" style="cursor:pointer;">
-                <div class="event-image">
-                    ${photo ? `<img src="${escapeHtml(photo)}" alt="${escapeHtml(name)}">` : `<div class="default-image"><div class="cloud cloud1"></div><div class="cloud cloud2"></div><div class="hill"></div></div>`}
-                </div>
-                <div class="event-details">
-                    <h3 class="event-title">${escapeHtml(name)}</h3>
-                    <div class="event-meta"><span>📍 ${escapeHtml(location)}</span> • <span>${escapeHtml(dateText)}</span></div>
-                    <p class="event-location">${escapeHtml(location)}</p>
-                    <p class="event-organizer">de: ${escapeHtml(owner)}</p>
-                    <p class="event-description">${escapeHtml(description)}</p>
-                    <div class="event-actions" style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
-                        <button class="attend-btn" onclick="event.stopPropagation(); alert('Funcionalidad de asistir próximamente');">Asistir 🚀</button>
-                        <a href="/events/${escapeHtml(id)}/" class="details-btn" onclick="event.stopPropagation();">🔍Ver detalles</a>
-                    </div>
-                </div>
-            </div>`;
-}
+    const dateObj  = ev.date ? new Date(ev.date) : null;
+    const dateText = dateObj
+        ? dateObj.toLocaleString('es-CL', {
+              day: '2-digit',
+              month: '2-digit',
+              year: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit'
+          })
+        : '';
+
+    const lat = ev.latitud != null ? ev.latitud : '';
+    const lng = ev.longitud != null ? ev.longitud : '';
+
+    const distancia = ev.distancia != null ? ev.distancia : null;
+
+    // tags puede venir como string "a b c" o como lista ["a","b","c"]
+    const tags = Array.isArray(ev.tags)
+        ? ev.tags
+        : (typeof ev.tags === 'string'
+            ? ev.tags.split(/\s+/).filter(Boolean)
+            : []);
+
+    const photo = ev.photo ?? '';
+
+    return `
+<div class="event-card"
+     data-id="${escapeHtml(id)}"
+     data-lat="${escapeHtml(lat)}"
+     data-lng="${escapeHtml(lng)}"
+     data-location="${escapeHtml(location)}"
+     style="cursor:pointer;">
+
+  <!-- Imagen del evento -->
+  <div class="event-image">
+    ${
+      photo
+        ? `<img src="${escapeHtml(photo)}" alt="${escapeHtml(name)}">`
+        : `<div class="default-image">
+             <div class="cloud cloud1"></div>
+             <div class="cloud cloud2"></div>
+             <div class="hill"></div>
+           </div>`
+    }
+  </div>
+
+  <!-- Detalles del evento -->
+  <div class="event-details">
+
+    <h3 class="event-title">${escapeHtml(name)}</h3>
+
+    <div class="event-meta">
+      <span>📍 ${
+        distancia != null
+          ? escapeHtml(String(distancia)) + ' M'
+          : '-- M'
+      }</span>
+      <span>• ${escapeHtml(dateText)}</span>
+    </div>
+
+    <p class="event-location">${escapeHtml(location)}</p>
+    <p class="event-organizer">de: ${escapeHtml(owner)}</p>
+
+    ${
+      lat !== '' && lng !== ''
+        ? `<div class="event-meta">
+             <span>
+               📍 ${escapeHtml(String(lat))},
+               ${escapeHtml(String(lng))}
+             </span>
+           </div>`
+        : ''
+    }
+
+    <p class="event-description">
+      ${escapeHtml(description)}
+    </p>
+
+    <!-- Tags -->
+    <div class="event-tags">
+      ${
+        tags
+          .map(t => `<span class="tag">${escapeHtml(String(t))}</span>`)
+          .join(' ')
+      }
+    </div>
+
+    <!-- Acciones -->
+    <div class="event-actions" style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+      <button class="attend-btn"
+              onclick="event.stopPropagation(); alert('Funcionalidad de asistir próximamente');">
+        Asistir 🚀
+      </button>
+
+      <!-- Botón Ver detalles -->
+      <a href="/evento/${escapeHtml(id)}/"
+         class="details-btn"
+         onclick="event.stopPropagation();">
+        🔍Ver detalles
+      </a>
+    </div>
+
+  </div>
+</div>`;
+};
+
 
 // Añade listeners a las cards (click para seleccionar/centrar)
 const attachEventCardListeners = () => {
