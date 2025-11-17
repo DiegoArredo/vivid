@@ -6,7 +6,33 @@ if (!window.__VIVID_MAP_INIT__) {
 
   let map; // una sola vez
   const markersById = new Map();
-  const STYLE_URL = "https://demotiles.maplibre.org/style.json"; // estilo remoto OK
+
+  // Estilo detallado basado en OpenStreetMap (raster)
+  const OSM_RASTER_STYLE = {
+  version: 8,
+  sources: {
+    "raster-tiles": {
+      type: "raster",
+      tiles: [
+        "https://tile.openstreetmap.org/{z}/{x}/{y}.png"
+      ],
+      tileSize: 256,
+      minzoom: 0,
+      maxzoom: 19
+    }
+  },
+  layers: [
+    {
+      id: "simple-tiles",
+      type: "raster",
+      source: "raster-tiles",
+      // la atribución va aquí según el ejemplo oficial
+      attribution: "© OpenStreetMap contributors"
+    }
+  ],
+  id: "osm-base"
+};
+
 
   document.addEventListener("DOMContentLoaded", () => {
     const dataEl = document.getElementById("eventos-data");
@@ -42,19 +68,24 @@ if (!window.__VIVID_MAP_INIT__) {
       return;
     }
 
-    const fallbackCenter = [-70.6643, -33.4569]; // Santiago
+    const fallbackCenter = [-70.6643, -33.4569]; // [lng, lat] Santiago
 
     map = new maplibregl.Map({
       container: "map",
-      style: STYLE_URL,
-      center: fallbackCenter,
+      style: OSM_RASTER_STYLE,   // 👈 usamos este objeto
+      center: fallbackCenter,    // [-70.6643, -33.4569]
       zoom: 12,
+      maxZoom: 19
     });
+
 
     map.addControl(new maplibregl.NavigationControl(), "top-right");
 
     map.on("load", () => {
-      console.log("[map] estilo cargado:", STYLE_URL);
+      console.log("[map] estilo cargado: OSM_RASTER_STYLE");
+      // importante en layouts flex/grid
+      map.resize();
+
       addEventMarkers(eventos);
       fitToEvents(eventos);
     });
@@ -87,7 +118,7 @@ if (!window.__VIVID_MAP_INIT__) {
         .setHTML(popupHtml);
 
       const marker = new maplibregl.Marker({ color: "#ff7a00" }) // pin default naranja
-        .setLngLat([e.lng, e.lat])
+        .setLngLat([e.lng, e.lat])  // [lng, lat]
         .setPopup(popup)
         .addTo(map);
 
@@ -146,7 +177,9 @@ if (!window.__VIVID_MAP_INIT__) {
   };
 
   function highlightCard(eventoId) {
-    document.querySelectorAll(".event-card").forEach((c) => c.classList.remove("highlighted"));
+    document.querySelectorAll(".event-card").forEach((c) =>
+      c.classList.remove("highlighted")
+    );
     const card =
       document.querySelector(`[data-id="${Number(eventoId)}"]`) ||
       document.querySelector(`[data-event-id="${Number(eventoId)}"]`);
