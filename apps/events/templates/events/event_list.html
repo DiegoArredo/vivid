@@ -103,182 +103,24 @@
 
 
 {% block extra_js %}
-<script>
-// === Variables y helpers globales ===
-window.vividMap = null;
-window.vividMarkersById = new Map();
+  <script src="{% static 'events/js/map.js' %}"></script>
+  <script src="{% static 'events/js/filter.js' %}"></script>
 
-/**
- * Escapa HTML para usar en popups de forma segura
- */
-window.escapeHtml = function(str) {
-  return String(str)
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
-};
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      if (typeof window.initEventListMap === "function") {
+        window.initEventListMap();
+      } else {
+        console.error("initEventListMap no está definido (¿map.js se cargó bien?)");
+      }
 
-/**
- * Lee los eventos directamente desde las .event-card del DOM
- * (sirve tanto al cargar la página como después de filtrar/buscar)
- */
-window.getEventsFromDOM = function() {
-  return [...document.querySelectorAll(".event-card")].map(card => {
-    const id  = Number(card.dataset.id || card.dataset.eventId);
-    const lat = parseFloat(card.dataset.lat);
-    const lng = parseFloat(card.dataset.lng);
-    const name = (card.querySelector(".event-title")?.textContent || "Evento").trim();
-    const location = (card.querySelector(".event-location")?.textContent || "").trim();
-    return {
-      id,
-      name,
-      location,
-      lat: Number.isFinite(lat) ? lat : null,
-      lng: Number.isFinite(lng) ? lng : null,
-    };
-  });
-};
-
-/**
- * Crea/actualiza los marcadores del mapa según las cards visibles
- */
-window.updateMapMarkers = function() {
-  if (!window.vividMap) {
-    console.warn("[map] mapa no inicializado");
-    return;
-  }
-
-  // Limpiar marcadores anteriores
-  window.vividMarkersById.forEach(marker => marker.remove());
-  window.vividMarkersById.clear();
-
-  const eventos = window.getEventsFromDOM();
-  const valid = eventos.filter(e => Number.isFinite(e.lat) && Number.isFinite(e.lng));
-  console.log("[map] eventos desde DOM:", eventos);
-  console.log("[map] válidos (con coords):", valid.length);
-
-  if (!valid.length) {
-    // Si no hay eventos con coordenadas, recentramos en Santiago
-    const fallbackCenter = [-70.6483, -33.4569];
-    window.vividMap.flyTo({ center: fallbackCenter, zoom: 11 });
-    return;
-  }
-
-  const bounds = new maplibregl.LngLatBounds();
-
-  valid.forEach(e => {
-    const marker = new maplibregl.Marker({ color: "#ff7a00" })
-      .setLngLat([e.lng, e.lat]) // [lng, lat]
-      .setPopup(
-        new maplibregl.Popup({ offset: 25 }).setHTML(`
-          <div style="padding:10px;max-width:240px">
-            <h4 style="margin:0 0 8px 0;color:#333;">${window.escapeHtml(e.name)}</h4>
-            ${
-              e.location
-                ? `<div style="margin:0 0 6px 0;color:#555;">${window.escapeHtml(e.location)}</div>`
-                : ""
-            }
-            <div style="font-size:12px;color:#666;">(${e.lat.toFixed(6)}, ${e.lng.toFixed(6)})</div>
-          </div>
-        `)
-      )
-      .addTo(window.vividMap);
-
-    window.vividMarkersById.set(e.id, marker);
-    bounds.extend([e.lng, e.lat]);
-  });
-
-  // Ajustar vista según cantidad de eventos
-  if (valid.length >= 2) {
-    window.vividMap.fitBounds(bounds, {
-      padding: 60,
-      maxZoom: 15,
-      duration: 600,
+      // Botón flotante para crear evento (igual que antes)
+      document.querySelector(".add-event-btn")?.addEventListener("click", (e) => {
+        const href = e.currentTarget.dataset.href;
+        if (href) window.location.href = href;
+      });
     });
-  } else if (valid.length === 1) {
-    window.vividMap.flyTo({
-      center: [valid[0].lng, valid[0].lat],
-      zoom: 14,
-    });
-    window.vividMarkersById.get(valid[0].id)?.togglePopup();
-  }
-};
-
-/**
- * Vuelve a asociar los listeners de click a las cards
- * (útil cuando se re-renderiza la lista por filtros/búsqueda)
- */
-window.attachCardClickListeners = function() {
-  // Primero clonar para limpiar posibles listeners anteriores
-  document.querySelectorAll(".event-card").forEach(card => {
-    card.style.cursor = "pointer";
-    const newCard = card.cloneNode(true);
-    card.replaceWith(newCard);
-  });
-
-  // Re-asignar listeners sobre los nuevos nodos
-  document.querySelectorAll(".event-card").forEach(card => {
-    const id = Number(card.dataset.id || card.dataset.eventId);
-    const lat = parseFloat(card.dataset.lat);
-    const lng = parseFloat(card.dataset.lng);
-
-    card.addEventListener("click", ev => {
-      if (ev.target.closest(".details-btn")) return; // deja navegar al detalle
-      if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
-
-      window.vividMap.flyTo({ center: [lng, lat], zoom: 14 });
-      window.vividMarkersById.get(id)?.togglePopup();
-
-      document.querySelectorAll(".event-card").forEach(c => c.classList.remove("selected"));
-      card.classList.add("selected");
-    });
-  });
-};
-
-document.addEventListener("DOMContentLoaded", () => {
-  // Guardias
-  if (typeof maplibregl === "undefined") {
-    console.error("[map] MapLibre no está cargado");
-    return;
-  }
-  const mapEl = document.getElementById("map");
-  if (!mapEl) {
-    console.error("[map] Falta #map");
-    return;
-  }
-
-  // === Aquí mantenemos TU mapa original (estilo liberty) ===
-  const styleUrl = "https://tiles.openfreemap.org/styles/liberty";
-  const fallbackCenter = [-70.6483, -33.4569]; // Santiago
-
-  window.vividMap = new maplibregl.Map({
-    container: "map",
-    style: styleUrl,
-    center: fallbackCenter,
-    zoom: 11,
-  });
-  window.vividMap.addControl(new maplibregl.NavigationControl(), "top-right");
-
-  window.vividMap.on("load", () => {
-    window.vividMap.resize();
-    setTimeout(() => window.vividMap.resize(), 100);
-
-    // Al cargar el mapa por primera vez:
-    window.updateMapMarkers();
-    window.attachCardClickListeners();
-  });
-
-  // Botón flotante para crear evento (lo mantengo igual)
-  document.querySelector(".add-event-btn")?.addEventListener("click", e => {
-    const href = e.currentTarget.dataset.href;
-    if (href) window.location.href = href;
-  });
-});
-</script>
-
-{# Ajusta el nombre al archivo real: filtros.js o filter.js según tu repo #}
-<script src="{% static 'events/js/filter.js' %}"></script>
+  </script>
 {% endblock %}
+
 

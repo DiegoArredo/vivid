@@ -1,4 +1,8 @@
-//Funcion para obtener valores de parametros de cookies. Especialmente CSRFToken
+// ===============================
+// CSRF y utils básicos
+// ===============================
+
+// Funcion para obtener valores de parametros de cookies. Especialmente CSRFToken
 function getCookie(name) {
     let cookieValue = null;
     if (document.cookie && document.cookie !== '') {
@@ -14,43 +18,89 @@ function getCookie(name) {
     }
     return cookieValue;
 }
-//Obtenemos el token CSRF
+// Obtenemos el token CSRF
 const csrftoken = getCookie('csrftoken');
 
-//Evento que se ejecuta al cargar el DOM de prueba de envio POST
-// document.addEventListener('DOMContentLoaded', function() {
-//     const url = new URL(window.location);
-//     fetch(url, {
-//         method: "POST",
-//         headers: {
-//             'X-CSRFToken': csrftoken,
-//             'Content-Type': 'application/json'
-//         },
-//         body: JSON.stringify({ message: 'prueba de envio' })
-//     }).then(response => response.json())
-//     .then(data => {
-//         console.log("Datos recibidos: " + JSON.stringify(data));
-//     });
-// });
+// ===============================
+// Geolocalización
+// ===============================
 
-//Funcion de filtro de eventos que envia el tipo de filtro, valor y categoria (si aplica) por POST
-const applyfilter = (filterType, searchValue = null, categoryId = null) => {
+/**
+ * Pide la ubicación del usuario (si no la teníamos) y llama a callback
+ * con {lat, lng} o null si falla / deniega permiso.
+ */
+let currentUserLocation = null;
+
+function getUserLocation(callback) {
+    if (currentUserLocation) {
+        callback(currentUserLocation);
+        return;
+    }
+
+    if (!navigator.geolocation) {
+        console.warn('Geolocalización no soportada por el navegador');
+        callback(null);
+        return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+    position => {
+        currentUserLocation = {
+            lat: position.coords.latitude,
+            lng: position.coords.longitude
+        };
+        window.currentUserLocation = currentUserLocation;
+        console.log('[geo] ubicación obtenida:', currentUserLocation);
+        callback(currentUserLocation);
+    },
+    error => {
+        console.warn('No se pudo obtener la ubicación:', error);
+        callback(null);
+    },
+    {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 0
+    }
+);
+
+}
+
+// ===============================
+// Filtro vía POST
+// ===============================
+
+/**
+ * Funcion de filtro de eventos que envia el tipo de filtro, valor y categoria (si aplica) por POST.
+ * Ahora también puede enviar la ubicación del usuario si se la pasamos.
+ */
+const applyfilter = (filterType, searchValue = null, categoryId = null, userLocation = null) => {
     const url = new URL(window.location);
+
+    // Cuerpo básico del POST
+    const bodyData = {
+        filterType: filterType,
+        searchValue: searchValue,
+        categoryId: categoryId
+    };
+
+    // Si tenemos ubicación de usuario, la agregamos al body
+    if (userLocation && typeof userLocation.lat === 'number' && typeof userLocation.lng === 'number') {
+        bodyData.userLat = userLocation.lat;
+        bodyData.userLng = userLocation.lng;
+    }
+
     fetch(url, {
         method: "POST",
         headers: {
             'X-CSRFToken': csrftoken,
             'Content-Type': 'application/json'
         },
-        body: JSON.stringify({
-            filterType: filterType,
-            searchValue: searchValue,
-            categoryId: categoryId
-        })
-    }).then(response => response.json())
+        body: JSON.stringify(bodyData)
+    })
+    .then(response => response.json())
     .then(data => {
         console.log("Datos recibidos: " + JSON.stringify(data));
-        // Para pruebas: dejar vacío el listado de eventos al recibir respuesta
         try {
             const eventosList = document.getElementById('eventos-list');
             if (!eventosList) {
@@ -58,33 +108,36 @@ const applyfilter = (filterType, searchValue = null, categoryId = null) => {
                 return;
             }
 
-            // Vaciar
+            // Vaciar contenedor de cards
             eventosList.innerHTML = '';
-            console.log('El contenedor #eventos-list fue vaciado (modo prueba).');
+            console.log('El contenedor #eventos-list fue vaciado.');
 
             // Si la respuesta tiene eventos, crear las cards y añadirlas
-            const events = (data && data.events) ? data.events : (data && data.body && data.body.events ? data.body.events : null);
+            const events = (data && data.events)
+                ? data.events
+                : (data && data.body && data.body.events ? data.body.events : null);
+
             if (Array.isArray(events) && events.length > 0) {
                 const fragment = document.createDocumentFragment();
                 events.forEach(ev => {
                     const wrapper = document.createElement('div');
                     wrapper.innerHTML = createEventCardHTML(ev).trim();
-                    // append the card element (firstChild of wrapper)
                     const card = wrapper.firstChild;
                     if (card) fragment.appendChild(card);
                 });
                 eventosList.appendChild(fragment);
-                // Re-asignar listeners a las nuevas cards
-                attachEventCardListeners();
-                console.log('Se agregaron', events.length, 'cards al DOM.');
-                
-                // Actualizar marcadores del mapa y listeners de click
-                if (typeof window.updateMapMarkers === 'function') {
-                    window.updateMapMarkers();
-                }
+
+            // Que el mapa se encargue de los clics en las cards
                 if (typeof window.attachCardClickListeners === 'function') {
                     window.attachCardClickListeners();
                 }
+
+                // Actualizar marcadores del mapa
+                if (typeof window.updateMapMarkers === 'function') {
+                    window.updateMapMarkers();
+                }
+
+                console.log('Se agregaron', events.length, 'cards al DOM.');
             } else {
                 console.log('No hay events en la respuesta para renderizar cards.');
             }
@@ -93,119 +146,204 @@ const applyfilter = (filterType, searchValue = null, categoryId = null) => {
             console.error('Error vaciando/creando cards en #eventos-list:', err);
         }
     });
-}
+};
 
-//Funciones para obtener valores activos de filtros
+// ===============================
+// Helpers para leer estado actual de filtros
+// ===============================
+
 const getActiveCategory = () => {
     const categorySelect = document.getElementById('category-select');
-    return categorySelect.value;
-}
+    return categorySelect ? categorySelect.value : null;
+};
 
 const getActiveFilter = () => {
     const activeFilterButton = document.querySelector('.filter-btn.active');
     return activeFilterButton ? activeFilterButton.dataset.filter : null;
-}
+};
 
 const getActiveSearchValue = () => {
     const searchInput = document.getElementById('search-input');
-    return searchInput.value.trim();
-}
+    return searchInput ? searchInput.value.trim() : '';
+};
 
+// ===============================
+// Listeners de filtros/búsqueda
+// ===============================
 
-//Evento que maneja los cambios en los filtros y realiza el envio POST
 document.addEventListener('DOMContentLoaded', function() {
-    const filterSection = document.querySelectorAll('.filter-btn');
+    const filterButtons  = document.querySelectorAll('.filter-btn');
     const categorySelect = document.getElementById('category-select');
-    const searchInput = document.getElementById('search-input');
-    
-    // Manejar clicks en botones de filtro
-    filterSection.forEach(button => {
+    const searchInput    = document.getElementById('search-input');
+    const clearSearchBtn = document.querySelector('.clear-search');
+
+    // --- Botones de filtro (Todo, Cercanos, Recientes, Populares) ---
+    filterButtons.forEach(button => {
         button.addEventListener('click', () => {
-
             const activeFilterButton = document.querySelector('.filter-btn.active');
-            activeFilterButton.classList.remove('active');
+            if (activeFilterButton) {
+                activeFilterButton.classList.remove('active');
+            }
             button.classList.add('active');
-            // Obtener valores actuales de los filtros
-            const filter = button.dataset.filter;
-            const categoryId = getActiveCategory();
+
+            const filter      = button.dataset.filter;
+            const categoryId  = getActiveCategory();
             const searchValue = getActiveSearchValue();
-            
-            console.log("Filtro seleccionado: " + filter);
-            console.log("Categoría seleccionada: " + categoryId);
-            console.log("Valor de búsqueda: " + searchValue);
-            // Aplicar filtro con llamada POST
-            applyfilter(filter, searchValue, categoryId);
+
+            console.log("Filtro seleccionado:", filter);
+            console.log("Categoría seleccionada:", categoryId);
+            console.log("Valor de búsqueda:", searchValue);
+
+            if (filter === 'cercanos') {
+                getUserLocation((location) => {
+                    if (!location) {
+                        console.warn('No hay ubicación de usuario, se aplicará filtro "cercanos" sin lat/lng');
+                        applyfilter(filter, searchValue, categoryId, null);
+                        return;
+                    }
+
+                    console.log('Ubicación de usuario:', location);
+                    applyfilter(filter, searchValue, categoryId, location);
+
+                    // Centrar mapa en la ubicación del usuario si está disponible
+                    if (typeof window.centerMapOnUserLocation === 'function') {
+                        window.centerMapOnUserLocation(location);
+                    } else {
+                        console.warn('[map] centerMapOnUserLocation no está definido');
+                    }
+                });
+            } else {
+                applyfilter(filter, searchValue, categoryId, null);
+            }
         });
     });
 
-    // Manejar cambios en el select de categorías
-    categorySelect.addEventListener('change', () => {
-        const filterSection = document.getElementById('filter-section');
-        const categoryId = categorySelect.value;
-        const filter = getActiveFilter();
-        const searchValue = getActiveSearchValue();
-        const existingPill = document.querySelector('.filter-pill');
-        if (categoryId === "") {
-            existingPill?.remove();
-            applyfilter(filter, searchValue, categoryId);
-            return;
-        }
-        if (existingPill) {
-            existingPill.remove();
-        }
-        var spanClear = document.createElement('span');
-        spanClear.className = "clear-category";
-        spanClear.innerText = "✕";
-            
-        var categoryPill = document.createElement('button');
-        categoryPill.className = "filter-pill active";
-        categoryPill.innerHTML = categorySelect.options[categorySelect.selectedIndex].text + spanClear.outerHTML;
-        categoryPill.addEventListener('click', () => {
-            categorySelect.value = "";
-            categoryPill.remove();
-            applyfilter(filter, searchValue, null);
-        });
-        try {
-        filterSection.appendChild(categoryPill);
-        } catch (err) {
-            console.error('Error al obtener filterSection:', err);
-        }
-        console.log("Categoría seleccionada: " + categoryId);
-        console.log("Valor de búsqueda: " + searchValue);
-        console.log("Botón de filtro activo: " + filter);
-        
-        applyfilter(filter, searchValue, categoryId);
-    });
+    // --- Cambio en el select de categorías ---
+    if (categorySelect) {
+        categorySelect.addEventListener('change', () => {
+            const categoryId  = categorySelect.value;
+            const filter      = getActiveFilter();
+            const searchValue = getActiveSearchValue();
 
-    // Manejar entrada en el campo de búsqueda con debounce
+            const filterSection = document.getElementById('filter-section')
+                                   || document.querySelector('.filter-section');
+            const existingPill  = document.querySelector('.filter-pill');
+
+            if (categoryId === "") {
+                existingPill?.remove();
+                // Si el filtro activo es "cercanos", reusar ubicación si ya la tenemos
+                if (filter === 'cercanos') {
+                    applyfilter(filter, searchValue, categoryId, currentUserLocation);
+                } else {
+                    applyfilter(filter, searchValue, categoryId, null);
+                }
+                return;
+            }
+
+            // Crear/actualizar pill de categoría
+            if (existingPill) {
+                existingPill.remove();
+            }
+
+            const spanClear = document.createElement('span');
+            spanClear.className = "clear-category";
+            spanClear.innerText = "✕";
+
+            const categoryPill = document.createElement('button');
+            categoryPill.className = "filter-pill active";
+            categoryPill.innerHTML =
+                categorySelect.options[categorySelect.selectedIndex].text +
+                spanClear.outerHTML;
+
+            categoryPill.addEventListener('click', () => {
+                categorySelect.value = "";
+                categoryPill.remove();
+                const filterNow = getActiveFilter();
+                const searchNow = getActiveSearchValue();
+                if (filterNow === 'cercanos') {
+                    applyfilter(filterNow, searchNow, null, currentUserLocation);
+                } else {
+                    applyfilter(filterNow, searchNow, null, null);
+                }
+            });
+
+            try {
+                filterSection?.appendChild(categoryPill);
+            } catch (err) {
+                console.error('Error al obtener filterSection:', err);
+            }
+
+            console.log("Categoría seleccionada:", categoryId);
+            console.log("Valor de búsqueda:", searchValue);
+            console.log("Botón de filtro activo:", filter);
+
+            if (filter === 'cercanos') {
+                if (currentUserLocation) {
+                    applyfilter(filter, searchValue, categoryId, currentUserLocation);
+                } else {
+                    getUserLocation(loc => applyfilter(filter, searchValue, categoryId, loc));
+                }
+            } else {
+                applyfilter(filter, searchValue, categoryId, null);
+            }
+        });
+    }
+
+    // --- Búsqueda con debounce ---
     let searchTimeout;
-    searchInput.addEventListener('input', function() {
-        clearTimeout(searchTimeout);
+    if (searchInput) {
+        searchInput.addEventListener('input', function() {
+            clearTimeout(searchTimeout);
 
-        const categoryId = getActiveCategory();
-        const filter = getActiveFilter();
-        
-        searchTimeout = setTimeout(() => {
-            const searchValue = this.value.trim();
-            console.log("Valor de búsqueda: " + searchValue);
-            console.log("Categoría seleccionada: " + categoryId);
-            console.log("Botón de filtro activo: " + filter);
+            searchTimeout = setTimeout(() => {
+                const filter     = getActiveFilter();
+                const categoryId = getActiveCategory();
+                const searchValue = this.value.trim();
 
-            applyfilter(filter, searchValue, categoryId);
-        }, 700); // Esperar 700ms después de que el usuario deje de escribir
-    });
+                console.log("Valor de búsqueda:", searchValue);
+                console.log("Categoría seleccionada:", categoryId);
+                console.log("Botón de filtro activo:", filter);
+
+                if (filter === 'cercanos') {
+                    if (currentUserLocation) {
+                        applyfilter(filter, searchValue, categoryId, currentUserLocation);
+                    } else {
+                        getUserLocation(loc => applyfilter(filter, searchValue, categoryId, loc));
+                    }
+                } else {
+                    applyfilter(filter, searchValue, categoryId, null);
+                }
+            }, 700); // Esperar 700ms después de que el usuario deje de escribir
+        });
+    }
+
+    // --- Botón para limpiar búsqueda ---
+    if (clearSearchBtn && searchInput) {
+        clearSearchBtn.addEventListener('click', () => {
+            searchInput.value = '';
+            const filter     = getActiveFilter();
+            const categoryId = getActiveCategory();
+            const searchValue = '';
+
+            if (filter === 'cercanos') {
+                if (currentUserLocation) {
+                    applyfilter(filter, searchValue, categoryId, currentUserLocation);
+                } else {
+                    getUserLocation(loc => applyfilter(filter, searchValue, categoryId, loc));
+                }
+            } else {
+                applyfilter(filter, searchValue, categoryId, null);
+            }
+        });
+    }
 });
 
-// ----------------------------
+// ===============================
 // Helpers para crear cards y listeners
-// ----------------------------
+// ===============================
 
 // Crea el HTML de una card a partir del objeto evento (respuesta del servidor)
-// Crea el HTML de una card a partir del objeto evento (respuesta del servidor)
 const createEventCardHTML = (ev) => {
-    console.log('[DEBUG] createEventCardHTML llamado con:', ev);
-    // Campos esperados: id, name, description, location, date,
-    // latitud, longitud, owner_username, distancia, tags, photo
     const id          = ev.id ?? '';
     const name        = ev.name ?? '';
     const description = ev.description ?? '';
@@ -228,7 +366,6 @@ const createEventCardHTML = (ev) => {
 
     const distancia = ev.distancia != null ? ev.distancia : null;
 
-    // tags puede venir como string "a b c" o como lista ["a","b","c"]
     const tags = Array.isArray(ev.tags)
         ? ev.tags
         : (typeof ev.tags === 'string'
@@ -245,7 +382,6 @@ const createEventCardHTML = (ev) => {
      data-location="${escapeHtml(location)}"
      style="cursor:pointer;">
 
-  <!-- Imagen del evento -->
   <div class="event-image">
     ${
       photo
@@ -258,7 +394,6 @@ const createEventCardHTML = (ev) => {
     }
   </div>
 
-  <!-- Detalles del evento -->
   <div class="event-details">
 
     <h3 class="event-title">${escapeHtml(name)}</h3>
@@ -290,7 +425,6 @@ const createEventCardHTML = (ev) => {
       ${escapeHtml(description)}
     </p>
 
-    <!-- Tags -->
     <div class="event-tags">
       ${
         tags
@@ -299,7 +433,6 @@ const createEventCardHTML = (ev) => {
       }
     </div>
 
-    <!-- Acciones -->
     <div class="event-actions" style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
       <button class="attend-btn"
               onclick="event.stopPropagation(); alert('Funcionalidad de asistir próximamente');">
@@ -318,37 +451,7 @@ const createEventCardHTML = (ev) => {
 </div>`;
 };
 
-
-// Añade listeners a las cards (click para seleccionar/centrar)
-const attachEventCardListeners = () => {
-        document.querySelectorAll('.event-card').forEach(card => {
-                // evitar duplicar handlers: remover antes (si asignaste via dataset)
-                card.replaceWith(card.cloneNode(true));
-        });
-
-        // volver a seleccionar y añadir handlers
-        document.querySelectorAll('.event-card').forEach(card => {
-                card.addEventListener('click', (ev) => {
-                        if (ev.target.closest('.details-btn')) return;
-                        document.querySelectorAll('.event-card').forEach(c => c.classList.remove('selected'));
-                        card.classList.add('selected');
-                        // posible hook para mapa: disparar evento global
-                        const detail = { id: Number(card.dataset.id || card.dataset.eventId), lat: card.dataset.lat, lng: card.dataset.lng };
-                        window.dispatchEvent(new CustomEvent('eventCard:selected', { detail }));
-                });
-        });
-}
-
 // Escape básico
 const escapeHtml = (str) => String(str == null ? '' : str)
-        .replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;')
-        .replaceAll('"','&quot;').replaceAll("'","&#039;");
-
-
-
-
-
-
-
-
-
+    .replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;')
+    .replaceAll('"','&quot;').replaceAll("'","&#039;");
