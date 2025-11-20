@@ -1,46 +1,66 @@
-# forms.py
 from django import forms
-from django.contrib.auth import authenticate
+from django.contrib.auth.models import User
 from django.contrib.auth.forms import UserCreationForm
-from .models import User
+
 
 class LoginForm(forms.Form):
-    username = forms.CharField(label="Usuario", max_length=150)
-    password = forms.CharField(label="Contraseña", widget=forms.PasswordInput)
-
-    def clean(self):
-        cleaned_data = super().clean()
-        username = cleaned_data.get("username")
-        password = cleaned_data.get("password")
-
-        if username and password:
-            user = authenticate(username=username, password=password)
-            if user is None:
-                raise forms.ValidationError("Usuario o contraseña incorrectos.")
-        return cleaned_data
+    """Formulario de inicio de sesión"""
+    username = forms.CharField(
+        max_length=150,
+        widget=forms.TextInput(attrs={
+            'class': 'auth-input',
+            'placeholder': 'Tu nombre de usuario',
+            'id': 'id_username'
+        })
+    )
+    password = forms.CharField(
+        widget=forms.PasswordInput(attrs={
+            'class': 'auth-input',
+            'placeholder': '••••••••',
+            'id': 'id_password'
+        })
+    )
 
 
 class RegisterForm(UserCreationForm):
-    password1 = forms.CharField(
-        label="Contraseña",
-        widget=forms.PasswordInput,
-        help_text="Mínimo 8 caracteres." 
-    )
-    password2 = forms.CharField(
-        label="Confirmar contraseña",
-        widget=forms.PasswordInput,
-        help_text="Confirma la contraseña"  
+    """Formulario de registro de nuevos usuarios"""
+    email = forms.EmailField(
+        required=True,
+        widget=forms.EmailInput(attrs={
+            'class': 'auth-input',
+            'placeholder': 'tu@email.com',
+            'id': 'id_email'
+        })
     )
 
     class Meta:
         model = User
-        fields = ("username", "email", "password1", "password2")
-        labels = {
-            "username": "Nombre de usuario",
-            "email": "Correo electrónico",
-        }
-        help_texts = {
-            "username": "Usa solo letras, números y @/./+/-/_",  
-            "email": "",     
+        fields = ['username', 'email', 'password1', 'password2']
+        widgets = {
+            'username': forms.TextInput(attrs={
+                'class': 'auth-input',
+                'placeholder': 'Elige un nombre de usuario',
+                'id': 'id_username'
+            }),
         }
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Aplicar clase CSS a los campos de contraseña
+        self.fields['password1'].widget.attrs.update({
+            'class': 'auth-input',
+            'placeholder': 'Elige una contraseña segura',
+            'id': 'id_password1'
+        })
+        self.fields['password2'].widget.attrs.update({
+            'class': 'auth-input',
+            'placeholder': 'Repite tu contraseña',
+            'id': 'id_password2'
+        })
+
+    def clean_email(self):
+        """Validar que el email no esté en uso"""
+        email = self.cleaned_data.get('email')
+        if User.objects.filter(email=email).exists():
+            raise forms.ValidationError('Este email ya está registrado.')
+        return email

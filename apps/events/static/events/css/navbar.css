@@ -1,4 +1,6 @@
-/* Header/Navbar */
+/* =========================================
+   NAVBAR / HEADER - VERSION COMPLETA
+========================================= */
 
 .header {
     background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-light) 100%);
@@ -10,12 +12,23 @@
     position: sticky;
     top: 0;
     z-index: 1000;
+    min-height: 60px;
 }
 
+/* Logo Section */
 .logo-section {
     display: flex;
     align-items: center;
     gap: 15px;
+}
+
+/* Logo section link wrapper - IMPORTANTE para que funcione */
+.logo-section a {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    text-decoration: none;
+    color: inherit;
 }
 
 .logo {
@@ -28,10 +41,16 @@
     justify-content: center;
     font-size: 24px;
     transition: transform 0.3s;
+    flex-shrink: 0;
 }
 
 .logo:hover {
     transform: rotate(10deg) scale(1.05);
+}
+
+.logo-text {
+    display: flex;
+    flex-direction: column;
 }
 
 .logo-text h1 {
@@ -39,27 +58,32 @@
     font-size: 24px;
     font-weight: 700;
     margin: 0;
+    line-height: 1.2;
 }
 
 .logo-text p {
     color: rgba(255, 255, 255, 0.9);
     font-size: 13px;
     margin: 0;
+    line-height: 1.2;
 }
 
-/* Menú de navegación */
+/* Navigation Menu */
 .nav-menu {
     display: flex;
-    gap: 30px;
+    gap: 25px;
     align-items: center;
+    flex-wrap: wrap;
 }
 
 .nav-menu a {
     color: var(--white);
     text-decoration: none;
     font-weight: 500;
+    font-size: 15px;
     transition: opacity 0.3s;
     position: relative;
+    white-space: nowrap;
 }
 
 .nav-menu a::after {
@@ -81,10 +105,17 @@
     opacity: 0.8;
 }
 
-/* Icono de usuario */
+/* Username display */
+.nav-menu span {
+    color: var(--white);
+    font-size: 14px;
+    font-weight: 500;
+}
+
+/* User Icon */
 .user-icon {
-    width: 35px;
-    height: 35px;
+    width: 36px;
+    height: 36px;
     background: var(--white);
     border-radius: 50%;
     display: flex;
@@ -92,6 +123,10 @@
     justify-content: center;
     cursor: pointer;
     transition: transform 0.3s, box-shadow 0.3s;
+    font-weight: 600;
+    color: var(--primary-color);
+    font-size: 16px;
+    flex-shrink: 0;
 }
 
 .user-icon:hover {
@@ -99,17 +134,114 @@
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
+/* Auth buttons styling - IMPORTANTE */
+.nav-menu a[href*="login"],
+.nav-menu a[href*="register"],
+.nav-menu a[href*="logout"] {
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.nav-menu a[href*="login"],
+.nav-menu a[href*="logout"] {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.nav-menu a[href*="register"] {
+    background: white;
+    color: var(--primary-color);
+}
+
+.nav-menu a[href*="login"]:hover,
+.nav-menu a[href*="logout"]:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+.nav-menu a[href*="register"]:hover {
+    background: rgba(255, 255, 255, 0.95);
+}
+
+/* Remove underline animation for auth buttons */
+.nav-menu a[href*="login"]::after,
+.nav-menu a[href*="register"]::after,
+.nav-menu a[href*="logout"]::after {
+    display: none;
+}
+
 /* Responsive */
-@media (max-width: 768px) {
-    .header {
-        padding: 15px 20px;
-    }
-    
+@media (max-width: 1200px) {
     .nav-menu {
         gap: 15px;
     }
     
     .nav-menu a {
         font-size: 14px;
+    }
+}
+
+@media (max-width: 992px) {
+    .header {
+        padding: 15px 30px;
+    }
+    
+    .logo-text p {
+        display: none;
+    }
+    
+    .nav-menu {
+        gap: 12px;
+    }
+}
+
+@media (max-width: 768px) {
+    .header {
+        padding: 15px 20px;
+        flex-wrap: wrap;
+    }
+    
+    .logo {
+        width: 35px;
+        height: 35px;
+        font-size: 20px;
+    }
+    
+    .logo-text h1 {
+        font-size: 20px;
+    }
+    
+    .nav-menu {
+        width: 100%;
+        justify-content: center;
+        gap: 10px;
+        margin-top: 10px;
+    }
+    
+    .nav-menu a {
+        font-size: 13px;
+    }
+    
+    .user-icon {
+        width: 32px;
+        height: 32px;
+        font-size: 14px;
+    }
+}
+
+@media (max-width: 480px) {
+    .header {
+        padding: 12px 15px;
+    }
+    
+    .logo-section {
+        gap: 10px;
+    }
+    
+    .nav-menu a[href*="login"],
+    .nav-menu a[href*="register"],
+    .nav-menu a[href*="logout"] {
+        padding: 6px 12px;
+        font-size: 13px;
     }
 }
