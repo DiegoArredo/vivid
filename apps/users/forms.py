@@ -1,95 +1,66 @@
 from django import forms
-from django.contrib.auth import authenticate
+from django.contrib.auth.models import User
 from django.contrib.auth.forms import UserCreationForm
-from .models import User
 
 
 class LoginForm(forms.Form):
-    """
-    Formulario personalizado para inicio de sesión
-    """
+    """Formulario de inicio de sesión"""
     username = forms.CharField(
-        label="Usuario",
         max_length=150,
         widget=forms.TextInput(attrs={
-            'class': 'form-input',
-            'placeholder': 'Nombre de usuario',
-            'autofocus': True
+            'class': 'auth-input',
+            'placeholder': 'Tu nombre de usuario',
+            'id': 'id_username'
         })
     )
     password = forms.CharField(
-        label="Contraseña",
         widget=forms.PasswordInput(attrs={
-            'class': 'form-input',
-            'placeholder': 'Tu contraseña'
+            'class': 'auth-input',
+            'placeholder': '••••••••',
+            'id': 'id_password'
         })
     )
-
-    def clean(self):
-        cleaned_data = super().clean()
-        username = cleaned_data.get("username")
-        password = cleaned_data.get("password")
-
-        if username and password:
-            user = authenticate(username=username, password=password)
-            if user is None:
-                raise forms.ValidationError("Usuario o contraseña incorrectos. Por favor, intenta de nuevo.")
-        return cleaned_data
 
 
 class RegisterForm(UserCreationForm):
-    """
-    Formulario personalizado para registro de usuarios
-    """
+    """Formulario de registro de nuevos usuarios"""
     email = forms.EmailField(
-        label="Correo electrónico",
         required=True,
         widget=forms.EmailInput(attrs={
-            'class': 'form-input',
-            'placeholder': 'tucorreo@ejemplo.com'
+            'class': 'auth-input',
+            'placeholder': 'tu@email.com',
+            'id': 'id_email'
         })
-    )
-    
-    username = forms.CharField(
-        label="Nombre de usuario",
-        widget=forms.TextInput(attrs={
-            'class': 'form-input',
-            'placeholder': 'Nombre de usuario'
-        }),
-        help_text='Usa solo letras, números y @/./+/-/_'
-    )
-    
-    password1 = forms.CharField(
-        label="Contraseña",
-        widget=forms.PasswordInput(attrs={
-            'class': 'form-input',
-            'placeholder': 'Crea una contraseña segura'
-        }),
-        help_text="Mínimo 8 caracteres. Combina letras y números."
-    )
-    
-    password2 = forms.CharField(
-        label="Confirmar contraseña",
-        widget=forms.PasswordInput(attrs={
-            'class': 'form-input',
-            'placeholder': 'Confirma tu contraseña'
-        }),
-        help_text="Confirma la contraseña"
     )
 
     class Meta:
         model = User
-        fields = ("username", "email", "password1", "password2")
-    
+        fields = ['username', 'email', 'password1', 'password2']
+        widgets = {
+            'username': forms.TextInput(attrs={
+                'class': 'auth-input',
+                'placeholder': 'Elige un nombre de usuario',
+                'id': 'id_username'
+            }),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Aplicar clase CSS a los campos de contraseña
+        self.fields['password1'].widget.attrs.update({
+            'class': 'auth-input',
+            'placeholder': 'Elige una contraseña segura',
+            'id': 'id_password1'
+        })
+        self.fields['password2'].widget.attrs.update({
+            'class': 'auth-input',
+            'placeholder': 'Repite tu contraseña',
+            'id': 'id_password2'
+        })
+
     def clean_email(self):
+        """Validar que el email no esté en uso"""
         email = self.cleaned_data.get('email')
         if User.objects.filter(email=email).exists():
-            raise forms.ValidationError('Este correo electrónico ya está registrado.')
+            raise forms.ValidationError('Este email ya está registrado.')
         return email
-    
-    def save(self, commit=True):
-        user = super().save(commit=False)
-        user.email = self.cleaned_data['email']
-        if commit:
-            user.save()
-        return user
