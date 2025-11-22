@@ -4,11 +4,11 @@
 <!-- Componente: Tarjeta de Evento -->
 <div class="event-card"
     data-id="{{ evento.id }}"
-    data-lat="{% if evento.latitud != None %}{{ evento.latitud|unlocalize }}{% endif %}"
-    data-lng="{% if evento.longitud != None %}{{ evento.longitud|unlocalize }}{% endif %}"
-    data-location="{{ evento.location|default:''|escapejs }}"
+    {% localize off %}
+    data-lat="{% if evento.latitud != None %}{{ evento.latitud|floatformat:'6'|unlocalize }}{% endif %}"
+    data-lng="{% if evento.longitud != None %}{{ evento.longitud|floatformat:'6'|unlocalize }}{% endif %}"
+    {% endlocalize %}
     style="cursor:pointer;">
-
 
   <!-- Imagen del evento -->
   <div class="event-image">
@@ -30,7 +30,8 @@
 
     <div class="event-meta">
       <span>📍 {% if evento.distancia %}{{ evento.distancia }} M{% else %}-- M{% endif %}</span>
-      <span>• {{ evento.date|date:"d-m-Y, H:i" }}</span>
+      {# 👇 ESTA ES LA FECHA QUE LEERÁ getEventsFromDOM COMO e.datetime #}
+      <span class="event-datetime">• {{ evento.date|date:"d-m-Y, H:i" }}</span>
     </div>
 
     <p class="event-location">{{ evento.location }}</p>

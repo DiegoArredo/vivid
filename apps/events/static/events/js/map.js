@@ -13,7 +13,7 @@ const FALLBACK_CENTER = [-70.6483, -33.4569]; // Santiago
 
 // Helper para escapar HTML
 window.escapeHtml = function (str) {
-  str = str ==null ? '': String(str)
+  str = str == null ? "" : String(str);
   return str
     .replaceAll("&", "&amp;")
     .replaceAll("<", "&lt;")
@@ -26,22 +26,39 @@ window.escapeHtml = function (str) {
 window.getEventsFromDOM = function () {
   return [...document.querySelectorAll(".event-card")].map((card) => {
     const id = Number(card.dataset.id || card.dataset.eventId);
-    const lat = parseFloat(card.dataset.lat);
-    const lng = parseFloat(card.dataset.lng);
+
+    // Leer crudo desde data-*, puede venir con coma o punto
+    const rawLat = card.dataset.lat;
+    const rawLng = card.dataset.lng;
+
+    const lat = rawLat != null && rawLat !== ""
+      ? Number(String(rawLat).trim().replace(",", "."))
+      : NaN;
+
+    const lng = rawLng != null && rawLng !== ""
+      ? Number(String(rawLng).trim().replace(",", "."))
+      : NaN;
+
     const name =
       (card.querySelector(".event-title")?.textContent || "Evento").trim();
+
     const location =
       (card.querySelector(".event-location")?.textContent || "").trim();
+
+    const datetime =
+      (card.querySelector(".event-datetime")?.textContent || "").trim();
 
     return {
       id,
       name,
       location,
+      datetime,
       lat: Number.isFinite(lat) ? lat : null,
       lng: Number.isFinite(lng) ? lng : null,
     };
   });
 };
+
 
 // Inicializa el mapa de la lista de eventos
 window.initEventListMap = function () {
@@ -99,33 +116,70 @@ window.updateMapMarkers = function () {
 
   const bounds = new maplibregl.LngLatBounds();
 
+  // Marcadores con popup estilizado (lista de eventos)
   valid.forEach((e) => {
-    const marker = new maplibregl.Marker({ color: "#ff7a00" })
-      .setLngLat([e.lng, e.lat])
-      .setPopup(
-        new maplibregl.Popup({ offset: 25 }).setHTML(`
-          <div style="padding:10px;max-width:240px">
-            <h4 style="margin:0 0 8px 0;color:#333;">${window.escapeHtml(
-              e.name
-            )}</h4>
-            ${
-              e.location
-                ? `<div style="margin:0 0 6px 0;color:#555;">${window.escapeHtml(
-                    e.location
-                  )}</div>`
-                : ""
-            }
-            <div style="font-size:12px;color:#666;">(${e.lat.toFixed(
-              6
-            )}, ${e.lng.toFixed(6)})</div>
-          </div>
-        `)
-      )
-      .addTo(window.vividMap);
+  const marker = new maplibregl.Marker({ color: "#ff7a00" })
+    .setLngLat([e.lng, e.lat])
+    .setPopup(
+      new maplibregl.Popup({ offset: 25 }).setHTML(`
+        <div style="
+          padding:10px;
+          max-width:260px;
+          font-family:'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+          background:#e0f2ff;              /* celeste claro */
+          border-radius:8px;
+          box-shadow:0 2px 6px rgba(0,0,0,0.15);
+        ">
+          <h4 style="
+            margin:0 0 4px 0;
+            font-size:15px;
+            font-weight:600;
+            color:#111827;
+          ">
+            ${window.escapeHtml(e.name)}
+          </h4>
 
-    window.vividMarkersById.set(e.id, marker);
-    bounds.extend([e.lng, e.lat]);
-  });
+          ${
+            e.location
+              ? `<div style="
+                   margin:0 0 4px 0;
+                   font-size:13px;
+                   color:#4b5563;
+                 ">
+                   ${window.escapeHtml(e.location)}
+                 </div>`
+              : ""
+          }
+
+          ${
+            e.datetime
+              ? `<div style="
+                   margin:0 0 6px 0;
+                   font-size:13px;
+                   font-weight:500;
+                   color:#374151;
+                 ">
+                   🕒 ${window.escapeHtml(e.datetime)}
+                 </div>`
+              : ""
+          }
+
+          <div style="
+            margin-top:2px;
+            font-size:11px;
+            color:#6b7280;
+          ">
+            (${e.lat.toFixed(6)}, ${e.lng.toFixed(6)})
+          </div>
+        </div>
+      `)
+    )
+    .addTo(window.vividMap);
+
+  window.vividMarkersById.set(e.id, marker);
+  bounds.extend([e.lng, e.lat]);
+});
+
 
   // Si el filtro activo es "cercanos" y tenemos ubicación de usuario,
   // centramos en el usuario y no hacemos fitBounds
@@ -194,8 +248,16 @@ window.attachCardClickListeners = function () {
 
   document.querySelectorAll(".event-card").forEach((card) => {
     const id = Number(card.dataset.id || card.dataset.eventId);
-    const lat = parseFloat(card.dataset.lat);
-    const lng = parseFloat(card.dataset.lng);
+    const rawLat = card.dataset.lat;
+    const rawLng = card.dataset.lng;
+
+    const lat = rawLat != null && rawLat !== ""
+      ? Number(String(rawLat).trim().replace(",", "."))
+      : NaN;
+
+    const lng = rawLng != null && rawLng !== ""
+      ? Number(String(rawLng).trim().replace(",", "."))
+      : NaN;
 
     card.addEventListener("click", (ev) => {
       if (ev.target.closest(".details-btn")) return;
@@ -211,6 +273,7 @@ window.attachCardClickListeners = function () {
     });
   });
 };
+
 
 // Centrar mapa en la ubicación del usuario (lo usa filter.js)
 window.centerMapOnUserLocation = function (location) {
@@ -245,6 +308,7 @@ window.centerMapOnUserLocation = function (location) {
 // Mapa de detalle de un solo evento
 window.initEventDetailMap = function () {
   console.log("[map] initEventDetailMap");
+  console.log("🧩 NUEVO POPUP EN initEventDetailMap");
 
   if (typeof maplibregl === "undefined") {
     console.error("[map] MapLibre no está cargado");
@@ -261,16 +325,16 @@ window.initEventDetailMap = function () {
   const lng = parseFloat(mapEl.dataset.lng);
   const name = mapEl.dataset.name || "Evento";
   const location = mapEl.dataset.location || "";
+  const datetime = mapEl.dataset.datetime || "";
 
   if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
     console.error("[map] coords inválidas en #detail-map", lat, lng);
     return;
   }
 
-  // Reutilizamos el mismo mapa global
   window.vividMap = new maplibregl.Map({
     container: "detail-map",
-    style: STYLE_URL, // mismo estilo que en la lista
+    style: STYLE_URL,
     center: [lng, lat],
     zoom: 15,
   });
@@ -278,29 +342,64 @@ window.initEventDetailMap = function () {
   window.vividMap.addControl(new maplibregl.NavigationControl(), "top-right");
 
   window.vividMap.on("load", () => {
-    const popupHtml = `
-      <div style="padding:10px;max-width:240px">
-        <h4 style="margin:0 0 8px 0;color:#333;">${window.escapeHtml(name)}</h4>
-        ${
-          location
-            ? `<div style="margin:0 0 6px 0;color:#555;">${window.escapeHtml(
-                location
-              )}</div>`
-            : ""
-        }
-        <div style="font-size:12px;color:#666;">(${lat.toFixed(
-          6
-        )}, ${lng.toFixed(6)})</div>
+  const popupHtml = `
+    <div style="
+      padding:10px;
+      max-width:260px;
+      font-family:'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      background:#e0f2ff;              /* celeste claro */
+      border-radius:8px;
+      box-shadow:0 2px 6px rgba(0,0,0,0.15);
+    ">
+      <h4 style="
+        margin:0 0 4px 0;
+        font-size:15px;
+        font-weight:600;
+        color:#111827;
+      ">
+        ${window.escapeHtml(name)}
+      </h4>
+
+      ${
+        location
+          ? `<div style="
+               margin:0 0 4px 0;
+               font-size:13px;
+               color:#4b5563;
+             ">
+               ${window.escapeHtml(location)}
+             </div>`
+          : ""
+      }
+
+      ${
+        datetime
+          ? `<div style="
+               margin:0 0 6px 0;
+               font-size:13px;
+               font-weight:500;
+               color:#374151;
+             ">
+               🕒 ${window.escapeHtml(datetime)}
+             </div>`
+          : ""
+      }
+
+      <div style="
+        margin-top:2px;
+        font-size:11px;
+        color:#6b7280;
+      ">
+        (${lat.toFixed(6)}, ${lng.toFixed(6)})
       </div>
-    `;
+    </div>
+  `;
 
-    const marker = new maplibregl.Marker({ color: "#ff7a00" })
-      .setLngLat([lng, lat])
-      .setPopup(new maplibregl.Popup({ offset: 25 }).setHTML(popupHtml))
-      .addTo(window.vividMap);
+  const marker = new maplibregl.Marker({ color: "#ff7a00" })
+    .setLngLat([lng, lat])
+    .setPopup(new maplibregl.Popup({ offset: 25 }).setHTML(popupHtml))
+    .addTo(window.vividMap);
 
-    // Abrir popup por defecto
-    marker.togglePopup();
-
-  });
-};
+  marker.togglePopup();
+});
+}

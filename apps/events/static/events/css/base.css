@@ -65,3 +65,15 @@ body {
 .slide-in {
     animation: slideIn 0.5s ease;
 }
+/* Ajustes globales para popups de MapLibre */
+.maplibregl-popup-content {
+  background: transparent !important;
+  padding: 0 !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+}
+
+/* Opcional: si no quieres el pinchito blanco abajo del popup */
+.maplibregl-popup-tip {
+  display: none;
+}

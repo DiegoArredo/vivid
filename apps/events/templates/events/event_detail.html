@@ -111,7 +111,8 @@
                  data-lat="{{ evento.latitud }}"
                  data-lng="{{ evento.longitud }}"
                  data-name="{{ evento.name|default:''|escape }}"
-                 data-location="{{ evento.location|default:''|escape }}">
+                 data-location="{{ evento.location|default:''|escape }}"
+                 data-datetime="{{ evento.date|date:'d/m/Y - H:i'|escape }}">
             </div>
         </div>
         {% endlocalize %}

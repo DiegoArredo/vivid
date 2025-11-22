@@ -94,6 +94,7 @@
     "id": {{ evento.id }},
     "name": "{{ evento.name|escapejs }}",
     "location": "{{ evento.location|default:''|escapejs }}",
+    "datetime": "{{ evento.date|date:'d/m/Y - H:i'|escapejs }}",
     "lat": {% if evento.latitud != None %}{{ evento.latitud|floatformat:"6"|unlocalize }}{% else %}null{% endif %},
     "lng": {% if evento.longitud != None %}{{ evento.longitud|floatformat:"6"|unlocalize }}{% else %}null{% endif %}
   }{% if not forloop.last %},{% endif %}
