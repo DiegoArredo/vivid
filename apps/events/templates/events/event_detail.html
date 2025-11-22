@@ -1,5 +1,6 @@
 {% extends 'events/base.html' %}
 {% load static %}
+{% load l10n %}
 
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'events/css/event_detail.css' %}">
@@ -103,13 +104,17 @@
 
         <!-- Mapa (tiene coordenadas) -->
         {% if evento.latitud and evento.longitud %}
+        {% localize off %}
         <div class="detail-section">
             <h2 class="section-title">Ubicación en el mapa</h2>
-            <div id="detail-map" 
-                 data-lat="{{ evento.latitud }}" 
-                 data-lng="{{ evento.longitud }}">
+            <div id="detail-map"
+                 data-lat="{{ evento.latitud }}"
+                 data-lng="{{ evento.longitud }}"
+                 data-name="{{ evento.name|default:''|escape }}"
+                 data-location="{{ evento.location|default:''|escape }}">
             </div>
         </div>
+        {% endlocalize %}
         {% endif %}
 
         <!-- Botones de acción -->
@@ -130,28 +135,14 @@
 
 {% block extra_js %}
 {% if evento.latitud and evento.longitud %}
+<script src="{% static 'events/js/map.js' %}"></script>
 <script>
-    // Inicializar mapa para el evento específico
-    document.addEventListener('DOMContentLoaded', function() {
-        const mapDiv = document.getElementById('detail-map');
-        const lat = parseFloat(mapDiv.dataset.lat);
-        const lng = parseFloat(mapDiv.dataset.lng);
-
-        const map = new maplibregl.Map({
-            container: 'detail-map',
-            style: 'https://demotiles.maplibre.org/style.json',
-            center: [lng, lat],
-            zoom: 15
-        });
-
-        // Añadir marcador
-        new maplibregl.Marker({color: '#FF7B54'})
-            .setLngLat([lng, lat])
-            .addTo(map);
-
-        // Añadir controles
-        map.addControl(new maplibregl.NavigationControl());
-    });
+  document.addEventListener('DOMContentLoaded', function () {
+    if (window.initEventDetailMap) {
+      window.initEventDetailMap();
+    }
+  });
 </script>
 {% endif %}
 {% endblock %}
+

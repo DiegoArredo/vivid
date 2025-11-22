@@ -241,3 +241,66 @@ window.centerMapOnUserLocation = function (location) {
     duration: 800,
   });
 };
+
+// Mapa de detalle de un solo evento
+window.initEventDetailMap = function () {
+  console.log("[map] initEventDetailMap");
+
+  if (typeof maplibregl === "undefined") {
+    console.error("[map] MapLibre no está cargado");
+    return;
+  }
+
+  const mapEl = document.getElementById("detail-map");
+  if (!mapEl) {
+    console.error("[map] Falta #detail-map");
+    return;
+  }
+
+  const lat = parseFloat(mapEl.dataset.lat);
+  const lng = parseFloat(mapEl.dataset.lng);
+  const name = mapEl.dataset.name || "Evento";
+  const location = mapEl.dataset.location || "";
+
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+    console.error("[map] coords inválidas en #detail-map", lat, lng);
+    return;
+  }
+
+  // Reutilizamos el mismo mapa global
+  window.vividMap = new maplibregl.Map({
+    container: "detail-map",
+    style: STYLE_URL, // mismo estilo que en la lista
+    center: [lng, lat],
+    zoom: 15,
+  });
+
+  window.vividMap.addControl(new maplibregl.NavigationControl(), "top-right");
+
+  window.vividMap.on("load", () => {
+    const popupHtml = `
+      <div style="padding:10px;max-width:240px">
+        <h4 style="margin:0 0 8px 0;color:#333;">${window.escapeHtml(name)}</h4>
+        ${
+          location
+            ? `<div style="margin:0 0 6px 0;color:#555;">${window.escapeHtml(
+                location
+              )}</div>`
+            : ""
+        }
+        <div style="font-size:12px;color:#666;">(${lat.toFixed(
+          6
+        )}, ${lng.toFixed(6)})</div>
+      </div>
+    `;
+
+    const marker = new maplibregl.Marker({ color: "#ff7a00" })
+      .setLngLat([lng, lat])
+      .setPopup(new maplibregl.Popup({ offset: 25 }).setHTML(popupHtml))
+      .addTo(window.vividMap);
+
+    // Abrir popup por defecto
+    marker.togglePopup();
+
+  });
+};
