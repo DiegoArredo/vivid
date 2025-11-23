@@ -3,6 +3,57 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'events/css/event_create.css' %}">
+<style>
+    #map-container {
+        height: 400px;
+        width: 100%;
+        margin: 20px 0;
+        border-radius: 8px;
+        overflow: hidden;
+        border: 2px solid #ddd;
+    }
+    
+    .map-instructions {
+        background: #fff3cd;
+        border: 1px solid #ffc107;
+        border-radius: 8px;
+        padding: 12px;
+        margin-bottom: 15px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 14px;
+    }
+    
+    .map-instructions svg {
+        flex-shrink: 0;
+        color: #856404;
+    }
+    
+    .selected-marker {
+        background-color: #FF7B54;
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        cursor: pointer;
+        border: 3px solid white;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+    
+    .coordinates-display {
+        margin-top: 10px;
+        padding: 8px 12px;
+        background: #f8f9fa;
+        border-radius: 8px;
+        font-size: 13px;
+        color: #666;
+        display: none;
+    }
+    
+    .coordinates-display.active {
+        display: block;
+    }
+</style>
 {% endblock %}
 
 {% block content %}
@@ -10,7 +61,7 @@
     <h1 class="form-title">Crear Nuevo Evento</h1>
     <p class="form-subtitle">Completa la información de tu evento</p>
     
-    <form method="post" enctype="multipart/form-data">
+    <form method="post" enctype="multipart/form-data" id="event-form">
         {% csrf_token %}
         
         <!-- Nombre del evento -->
@@ -40,25 +91,40 @@
             {% endif %}
         </div>
         
-        <!-- Ubicación -->
+        <!-- Mapa interactivo -->
+        <div class="form-group">
+            <label class="form-label">Ubicación en el Mapa *</label>
+            <div class="map-instructions">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 22s-8-4.5-8-11.8A8 8 0 0 1 12 2a8 8 0 0 1 8 8.2c0 7.3-8 11.8-8 11.8z"/>
+                    <circle cx="12" cy="10" r="3"/>
+                </svg>
+                <span>Haz clic en el mapa para seleccionar la ubicación exacta de tu evento</span>
+            </div>
+            <div id="map-container"></div>
+            <div id="coordinates-display" class="coordinates-display">
+                <strong>Coordenadas seleccionadas:</strong> 
+                <span id="coords-text">Ninguna</span>
+            </div>
+        </div>
+        
+        <!-- Ubicación (auto-filled) -->
         <div class="form-group">
             <label class="form-label">Ubicación</label>
             {{ form.location }}
             {% if form.location.errors %}
                 <div class="error-message">{{ form.location.errors }}</div>
             {% endif %}
+            <small style="color: #7f8c8d; display: block; margin-top: 4px;">
+                Esta dirección se llenará automáticamente al seleccionar en el mapa
+            </small>
         </div>
 
-        <div>
-            {{ form.latitud.label_tag }}
+        <!-- Hidden coordinate fields -->
+        <div style="display: none;">
             {{ form.latitud }}
-        </div>
-
-        <div>
-            {{ form.longitud.label_tag }}
             {{ form.longitud }}
         </div>
-
         
         <!-- Categoría -->
         <div class="form-group">
@@ -101,4 +167,133 @@
         </div>
     </form>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Initialize map
+    const map = new maplibregl.Map({
+        container: 'map-container',
+        style: 'https://tiles.openfreemap.org/styles/liberty',
+        center: [-70.6693, -33.4489], // Santiago, Chile default
+        zoom: 12
+    });
+
+    // Add navigation controls
+    map.addControl(new maplibregl.NavigationControl(), 'top-right');
+
+    let marker = null;
+
+    // Try to get user's location
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                const userLocation = [position.coords.longitude, position.coords.latitude];
+                map.setCenter(userLocation);
+                map.setZoom(14);
+            },
+            (error) => {
+                console.log('No se pudo obtener la ubicación del usuario:', error);
+            }
+        );
+    }
+
+    // Handle map clicks
+    map.on('click', async (e) => {
+        const { lng, lat } = e.lngLat;
+        
+        // Remove existing marker
+        if (marker) {
+            marker.remove();
+        }
+        
+        // Create custom marker element
+        const el = document.createElement('div');
+        el.className = 'selected-marker';
+        
+        // Add new marker
+        marker = new maplibregl.Marker(el)
+            .setLngLat([lng, lat])
+            .addTo(map);
+        
+        // Update hidden fields
+        document.getElementById('id_latitud').value = lat.toFixed(6);
+        document.getElementById('id_longitud').value = lng.toFixed(6);
+        
+        // Update coordinates display
+        const coordsDisplay = document.getElementById('coordinates-display');
+        const coordsText = document.getElementById('coords-text');
+        coordsDisplay.classList.add('active');
+        coordsText.textContent = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+        
+        // Reverse geocode to get address
+        await reverseGeocode(lat, lng);
+    });
+
+    // Reverse geocoding function using Nominatim (OpenStreetMap)
+    async function reverseGeocode(lat, lng) {
+        const locationInput = document.getElementById('id_location');
+        locationInput.value = 'Obteniendo dirección...';
+        
+        try {
+            const response = await fetch(
+                `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`,
+                {
+                    headers: {
+                        'Accept-Language': 'es'
+                    }
+                }
+            );
+            
+            if (!response.ok) throw new Error('Error al obtener la dirección');
+            
+            const data = await response.json();
+            
+            // Format address
+            const address = data.address;
+            let formattedAddress = '';
+            
+            if (address.road) {
+                formattedAddress += address.road;
+                if (address.house_number) {
+                    formattedAddress += ' ' + address.house_number;
+                }
+            } else if (address.neighbourhood) {
+                formattedAddress += address.neighbourhood;
+            }
+            
+            if (address.suburb) {
+                formattedAddress += (formattedAddress ? ', ' : '') + address.suburb;
+            }
+            
+            if (address.city || address.town || address.village) {
+                formattedAddress += (formattedAddress ? ', ' : '') + 
+                    (address.city || address.town || address.village);
+            }
+            
+            if (address.country) {
+                formattedAddress += (formattedAddress ? ', ' : '') + address.country;
+            }
+            
+            locationInput.value = formattedAddress || data.display_name;
+            
+        } catch (error) {
+            console.error('Error en reverse geocoding:', error);
+            locationInput.value = `Lat: ${lat.toFixed(4)}, Lng: ${lng.toFixed(4)}`;
+        }
+    }
+
+    // Form validation
+    document.getElementById('event-form').addEventListener('submit', (e) => {
+        const lat = document.getElementById('id_latitud').value;
+        const lng = document.getElementById('id_longitud').value;
+        
+        if (!lat || !lng) {
+            e.preventDefault();
+            alert('Por favor, selecciona una ubicación en el mapa para tu evento.');
+            document.getElementById('map-container').scrollIntoView({ behavior: 'smooth' });
+            return false;
+        }
+    });
+</script>
 {% endblock %}
