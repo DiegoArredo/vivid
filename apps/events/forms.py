@@ -1,43 +1,54 @@
 from django import forms
 from .models import Event, Category
 
+
 class EventForm(forms.ModelForm):
     class Meta:
         model = Event
-        fields = ['name', 'description','latitud','longitud','date', 'location', 'category', 'photo', 'tags']
+        fields = [
+            "name",
+            "description",
+            "date",
+            "location",
+            "category",
+            "photo",
+            "tags",
+            "latitud",
+            "longitud",
+        ]
         widgets = {
-            'name': forms.TextInput(attrs={
-                'class': 'form-input',
-                'placeholder': 'Nombre del evento'
-            }),
-            'description': forms.Textarea(attrs={
-                'class': 'form-input',
-                'placeholder': 'Describe tu evento...',
-                'rows': 4
-            }),
-            'date': forms.DateTimeInput(attrs={
-                'class': 'form-input',
-                'type': 'datetime-local'
-            }),
-            'location': forms.TextInput(attrs={
-                'class': 'form-input',
-                'placeholder': 'Dirección del evento'
-            }),
-            'category': forms.Select(attrs={
-                'class': 'form-input'
-            }),
-            'photo': forms.FileInput(attrs={
-                'class': 'form-input',
-                'accept': 'image/*'
-            }),
-            'tags': forms.TextInput(attrs={
-                'class': 'form-input',
-                'placeholder': 'Ej: música concierto rock'
-            }),
-            'latitud': forms.NumberInput(attrs={
-                'class': 'form-input','step': '0.000001', 
-                'placeholder': '-33.456940'}),
-            'longitud': forms.NumberInput(attrs={
-                'class': 'form-input','step': '0.000001', 
-                'placeholder': '-70.648270'})
+            "name": forms.TextInput(
+                attrs={"class": "form-input", "placeholder": "Nombre del evento"}
+            ),
+            "description": forms.Textarea(
+                attrs={
+                    "class": "form-input",
+                    "placeholder": "Describe tu evento...",
+                    "rows": 4,
+                }
+            ),
+            "date": forms.DateTimeInput(
+                attrs={"class": "form-input", "type": "datetime-local"}
+            ),
+            "location": forms.TextInput(
+                attrs={
+                    "class": "form-input",
+                    "placeholder": "Dirección del evento",
+                    "id": "id_location",
+                    "readonly": True,  # Auto-filled by map
+                }
+            ),
+            "category": forms.Select(attrs={"class": "form-input"}),
+            "photo": forms.FileInput(
+                attrs={"class": "form-input", "accept": "image/*"}
+            ),
+            "tags": forms.TextInput(
+                attrs={
+                    "class": "form-input",
+                    "placeholder": "Ej: música concierto rock",
+                }
+            ),
+            # Hidden fields - will be filled by map interaction
+            "latitud": forms.HiddenInput(attrs={"id": "id_latitud"}),
+            "longitud": forms.HiddenInput(attrs={"id": "id_longitud"}),
         }
