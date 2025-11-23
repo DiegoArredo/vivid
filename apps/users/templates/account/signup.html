@@ -1,0 +1,81 @@
+{% extends 'events/base.html' %}
+{% load account %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'users/css/auth-forms.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+  <div class="auth-wrapper">
+    <div class="auth-card">
+      <div class="auth-header">
+        <h1 class="auth-title">Crear Cuenta</h1>
+        <p class="auth-subtitle">Únete a Vivid y descubre eventos increíbles</p>
+      </div>
+
+      <form method="post" class="auth-form" action="{% url 'account_signup' %}">
+        {% csrf_token %}
+
+        <div class="auth-form-group">
+          <label for="id_username" class="auth-label">Usuario *</label>
+          {{ form.username }}
+          {% if form.username.errors %}
+            {% for error in form.username.errors %}
+              <span class="auth-error">{{ error }}</span>
+            {% endfor %}
+          {% endif %}
+        </div>
+
+        <div class="auth-form-group">
+          <label for="id_email" class="auth-label">Email *</label>
+          {{ form.email }}
+          {% if form.email.errors %}
+            {% for error in form.email.errors %}
+              <span class="auth-error">{{ error }}</span>
+            {% endfor %}
+          {% endif %}
+        </div>
+
+        <div class="auth-form-group">
+          <label for="id_password1" class="auth-label">Contraseña *</label>
+          {{ form.password1 }}
+          {% if form.password1.errors %}
+            {% for error in form.password1.errors %}
+              <span class="auth-error">{{ error }}</span>
+            {% endfor %}
+          {% endif %}
+          <small style="color: #7f8c8d; font-size: 12px; display: block; margin-top: 4px;">
+            Mínimo 8 caracteres, no solo numérica
+          </small>
+        </div>
+
+        <div class="auth-form-group">
+          <label for="id_password2" class="auth-label">Confirmar Contraseña *</label>
+          {{ form.password2 }}
+          {% if form.password2.errors %}
+            {% for error in form.password2.errors %}
+              <span class="auth-error">{{ error }}</span>
+            {% endfor %}
+          {% endif %}
+        </div>
+
+        {% if redirect_field_value %}
+        <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}" />
+        {% endif %}
+
+        <button type="submit" class="auth-button">Crear Cuenta 🚀</button>
+      </form>
+
+      <div class="auth-footer">
+        <p style="color: #7f8c8d; font-size: 14px; margin: 0;">
+          ¿Ya tienes cuenta? 
+          <a href="{% url 'account_login' %}" class="auth-link">Inicia sesión aquí</a>
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

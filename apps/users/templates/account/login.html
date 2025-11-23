@@ -1,0 +1,75 @@
+{% extends 'events/base.html' %}
+{% load account socialaccount %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'users/css/auth-forms.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+    <div class="auth-wrapper">
+        <div class="auth-card">
+            <div class="auth-header">
+                <h1 class="auth-title">Iniciar Sesión</h1>
+                <p class="auth-subtitle">¡Bienvenido de vuelta a Vivid!</p>
+            </div>
+
+            <form method="post" class="auth-form" action="{% url 'account_login' %}">
+                {% csrf_token %}
+
+                {% if form.non_field_errors %}
+                <div class="auth-form-errors" style="margin-bottom: 12px;">
+                    {% for error in form.non_field_errors %}
+                        <div class="alert alert-error">{{ error }}</div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                <!-- Login (username/email según configuración de allauth) -->
+                <div class="auth-form-group">
+                    <label for="{{ form.login.id_for_label }}" class="auth-label">Correo o Usuario</label>
+                    {{ form.login }}
+                    {% if form.login.errors %}
+                        {% for error in form.login.errors %}
+                            <span class="auth-error">{{ error }}</span>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+
+                <!-- Password -->
+                <div class="auth-form-group">
+                    <label for="{{ form.password.id_for_label }}" class="auth-label">Contraseña</label>
+                    {{ form.password }}
+                    {% if form.password.errors %}
+                        {% for error in form.password.errors %}
+                            <span class="auth-error">{{ error }}</span>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+
+                <!-- Remember me -->
+                <div class="auth-checkbox-group">
+                    <label class="auth-checkbox-label">
+                        {{ form.remember }} Recordarme
+                    </label>
+                </div>
+
+                {% if redirect_field_value %}
+                <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}" />
+                {% endif %}
+
+                <button type="submit" class="auth-button">Iniciar Sesión 🚀</button>
+            </form>
+
+            <div class="auth-footer">
+                <p style="color: #7f8c8d; font-size: 14px; margin: 0;">
+                    ¿No tienes cuenta? 
+                    <a href="{% url 'account_signup' %}" class="auth-link">Regístrate aquí</a>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
