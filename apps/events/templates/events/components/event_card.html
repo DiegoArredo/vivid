@@ -62,10 +62,25 @@
 
     <!-- Acciones -->
     <div class="event-actions" style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
-      <button class="attend-btn"
-              onclick="event.stopPropagation(); alert('Funcionalidad de asistir próximamente');">
-        Asistir 🚀
-      </button>
+      {% if user.is_authenticated %}
+      <form method="post" action="{% url 'events:event_subscribe' %}"
+            class="subscribe-form"
+            data-subscribe-url="{% url 'events:event_subscribe' %}"
+            data-unsubscribe-url="{% url 'events:event_unsubscribe' %}"
+            data-event-id="{{ evento.id }}"
+            onsubmit="event.stopPropagation();">
+        {% csrf_token %}
+        <input type="hidden" name="event_id" value="{{ evento.id }}">
+        {% if evento.id in subscribed_event_ids %}
+          <button type="submit" class="attend-btn subscribed">Ya suscrito</button>
+        {% else %}
+          <button type="submit" class="attend-btn">Suscribirme 🚀</button>
+        {% endif %}
+        <div class="card-msg" aria-live="polite" style="margin-left:8px;"></div>
+      </form>
+      {% else %}
+      <a href="{% url 'account_login' %}?next={% url 'events:event_list' %}" class="attend-btn">Suscribirme 🚀</a>
+      {% endif %}
 
       <!-- Botón Ver detalles -->
       <a href="{% url 'events:event_detail' evento.id %}"
