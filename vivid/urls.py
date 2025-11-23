@@ -25,6 +25,7 @@ urlpatterns = [
     path('', include('apps.events.urls')),                # Events en la raíz
     path('users/', include('apps.users.urls')),           # Autenticación
     #path('dashboard/', include('apps.dashboard.urls')),  # Dashboard personal (futuro)
+    path('accounts/', include('allauth.urls'))
 ]
 
 

@@ -1,66 +1,65 @@
-from django import forms
-from django.contrib.auth.models import User
-from django.contrib.auth.forms import UserCreationForm
+from allauth.account.forms import SignupForm
+from allauth.account.forms import LoginForm as AllAuthLoginForm
 
 
-class LoginForm(forms.Form):
-    """Formulario de inicio de sesión"""
-    username = forms.CharField(
-        max_length=150,
-        widget=forms.TextInput(attrs={
-            'class': 'auth-input',
-            'placeholder': 'Tu nombre de usuario',
-            'id': 'id_username'
-        })
-    )
-    password = forms.CharField(
-        widget=forms.PasswordInput(attrs={
-            'class': 'auth-input',
-            'placeholder': '••••••••',
-            'id': 'id_password'
-        })
-    )
+class CustomSignupForm(SignupForm):
+    """Personaliza el form de signup de django-allauth para aplicar widgets
 
-
-class RegisterForm(UserCreationForm):
-    """Formulario de registro de nuevos usuarios"""
-    email = forms.EmailField(
-        required=True,
-        widget=forms.EmailInput(attrs={
-            'class': 'auth-input',
-            'placeholder': 'tu@email.com',
-            'id': 'id_email'
-        })
-    )
-
-    class Meta:
-        model = User
-        fields = ['username', 'email', 'password1', 'password2']
-        widgets = {
-            'username': forms.TextInput(attrs={
-                'class': 'auth-input',
-                'placeholder': 'Elige un nombre de usuario',
-                'id': 'id_username'
-            }),
-        }
+    Reusa los campos que allauth provee (username, email, password1, password2)
+    y aplica los mismos `class` / `placeholder` / `id` que usas en `register.html`.
+    """
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # Aplicar clase CSS a los campos de contraseña
-        self.fields['password1'].widget.attrs.update({
-            'class': 'auth-input',
-            'placeholder': 'Elige una contraseña segura',
-            'id': 'id_password1'
-        })
-        self.fields['password2'].widget.attrs.update({
-            'class': 'auth-input',
-            'placeholder': 'Repite tu contraseña',
-            'id': 'id_password2'
-        })
+        # Aplica atributos CSS/placeholder a todos los campos disponibles
+        for name, field in self.fields.items():
+            # Mantén cualquier atributo existente y añade los nuestros
+            existing = field.widget.attrs or {}
+            existing.update({"class": "auth-input", "id": f"id_{name}"})
+            field.widget.attrs = existing
 
-    def clean_email(self):
-        """Validar que el email no esté en uso"""
-        email = self.cleaned_data.get('email')
-        if User.objects.filter(email=email).exists():
-            raise forms.ValidationError('Este email ya está registrado.')
-        return email
+        # Placeholders más descriptivos
+        if "username" in self.fields:
+            self.fields["username"].widget.attrs.update({"placeholder": "Elige un nombre de usuario"})
+        if "email" in self.fields:
+            self.fields["email"].widget.attrs.update({"placeholder": "tu@email.com"})
+        # allauth puede usar 'password' o 'password1'/'password2' según la configuración
+        if "password1" in self.fields:
+            self.fields["password1"].widget.attrs.update({"placeholder": "Elige una contraseña segura"})
+        if "password2" in self.fields:
+            self.fields["password2"].widget.attrs.update({"placeholder": "Repite tu contraseña"})
+
+    def save(self, request):
+        # Llamar a la implementación padre para crear el usuario
+        user = super().save(request)
+        # Aquí podrías asignar datos extra al usuario si añades campos adicionales
+        return user
+
+
+class CustomLoginForm(AllAuthLoginForm):
+    """Personaliza el form de login de django-allauth para aplicar widgets.
+
+    Añade clases y placeholders a los campos `login`, `password` y al checkbox `remember`.
+    """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Campos que habitualmente trae el LoginForm de allauth
+        if "login" in self.fields:
+            self.fields["login"].widget.attrs.update({
+                "class": "auth-input",
+                "placeholder": "Correo o Usuario",
+                "id": "id_login",
+            })
+        if "password" in self.fields:
+            self.fields["password"].widget.attrs.update({
+                "class": "auth-input",
+                "placeholder": "••••••••",
+                "id": "id_password",
+            })
+        if "remember" in self.fields:
+            # checkbox
+            self.fields["remember"].widget.attrs.update({
+                "class": "auth-checkbox",
+                "id": "id_remember",
+            })

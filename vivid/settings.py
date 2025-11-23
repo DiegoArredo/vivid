@@ -40,11 +40,18 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    # "apps.dashboard",  # Para futuro
     "apps.events",
     "apps.maps",
-    "apps.users"
+    "apps.users",
+    # "apps.dashboard",  # Para futuro
+    'django.contrib.sites',  # <--- AGREGAR
+    'allauth',               # <--- AGREGAR
+    'allauth.account',       # <--- AGREGAR
+    'allauth.socialaccount', # <--- AGREGAR (Para Google)
 ]
+
+SITE_ID = 1  # <--- IMPORTANTE
+
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
@@ -54,6 +61,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "allauth.account.middleware.AccountMiddleware",
 ]
 
 ROOT_URLCONF = "vivid.urls"
@@ -107,7 +115,10 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',
+    'allauth.account.auth_backends.AuthenticationBackend', # <--- AGREGAR
+]
 
 # Internationalization
 # https://docs.djangoproject.com/en/5.1/topics/i18n/
@@ -142,8 +153,20 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
+# Configuración de django-allauth (valores compatibles con la versión actual)
+# Autenticación: permitir login por username o email
+# Requerir email y username en el signup
+ACCOUNT_LOGIN_METHODS = {'email', 'username'}
+ACCOUNT_SIGNUP_FIELDS = ['email*', 'username*', 'password1*', 'password2*']
+ACCOUNT_UNIQUE_EMAIL = True
+# Registrar un form personalizado para signup (lo implementamos en apps.users.forms)
+ACCOUNT_FORMS = {
+    'signup': 'apps.users.forms.CustomSignupForm',
+    'login': 'apps.users.forms.CustomLoginForm',
+}
 
-
-LOGIN_URL = '/users/login/'          # <-- la URL donde está tu login real
-LOGIN_REDIRECT_URL = '/'             # a dónde volver tras iniciar sesión
-LOGOUT_REDIRECT_URL = '/'            # a dónde volver tras cerrar sesión
+LOGIN_REDIRECT_URL = '/'       # A donde van después de loguearse
+LOGOUT_REDIRECT_URL = '/login' # A donde van después de salir
+ACCOUNT_EMAIL_VERIFICATION = 'none' # Opciones: 'mandatory', 'optional', 'none'
+# Redirigir después del logout de allauth (usar ruta absoluta o nombre de URL)
+ACCOUNT_LOGOUT_REDIRECT_URL = '/'
