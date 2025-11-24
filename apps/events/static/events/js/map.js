@@ -1,5 +1,4 @@
 // events/static/events/js/map.js
-
 console.log("[map] map.js cargado");
 
 // Estado global del mapa de la lista de eventos
