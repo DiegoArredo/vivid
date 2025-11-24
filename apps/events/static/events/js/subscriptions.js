@@ -1,58 +1,52 @@
-function getCookie(name) {
-  const match = document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]+)');
-  return match ? match.pop() : '';
-}
 
-document.addEventListener('DOMContentLoaded', () => {
-  function updateButtonState(button, subscribed) {
-    if (subscribed) {
-      button.classList.add('subscribed');
-      button.textContent = 'Ya suscrito';
-    } else {
-      button.classList.remove('subscribed');
-      button.textContent = 'Suscribirme 🚀';
-    }
+function updateButtonState(button, subscribed) {
+  if (subscribed) {
+    button.classList.add('subscribed');
+    button.textContent = 'Ya suscrito';
+  } else {
+    button.classList.remove('subscribed');
+    button.textContent = 'Suscribirme 🚀';
   }
+document.addEventListener('DOMContentLoaded', () => {
+  
 
   // Attach to all subscribe forms
-  document.querySelectorAll('.subscribe-form').forEach(form => {
-    const btn = form.querySelector('button[type="submit"]');
-    const msgContainer = form.querySelector('.card-msg');
-    const subscribeUrl = form.dataset.subscribeUrl;
-    const unsubscribeUrl = form.dataset.unsubscribeUrl;
-    const eventId = form.dataset.eventId;
+  document.querySelectorAll('.attend-btn').forEach(subButton => {
+    const msgContainer = subButton.querySelector('.messages');
+    const subscribeUrl = subButton.dataset.subscribeurl;
+    const unsubscribeUrl = subButton.dataset.unsubscribeurl;
+    const eventId = subButton.dataset.eventid;
+
 
     // Hover behaviour: if subscribed, show "Desuscribirse" on hover
-    btn.addEventListener('mouseenter', () => {
-      if (btn.classList.contains('subscribed')) {
-        btn.dataset.orig = btn.textContent;
-        btn.textContent = 'Desuscribirse';
+    subButton.addEventListener('mouseenter', () => {
+        console.log('mouseenter');
+      if (subButton.classList.contains('subscribed')) {
+        subButton.dataset.orig = subButton.textContent;
+        subButton.textContent = 'Desuscribirse';
       }
     });
-    btn.addEventListener('mouseleave', () => {
-      if (btn.classList.contains('subscribed') && btn.dataset.orig) {
-        btn.textContent = btn.dataset.orig;
-        delete btn.dataset.orig;
+    subButton.addEventListener('mouseleave', () => {
+      if (subButton.classList.contains('subscribed') && subButton.dataset.orig) {
+        subButton.textContent = subButton.dataset.orig;
+        delete subButton.dataset.orig;
       }
     });
 
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
+    subButton.addEventListener('click', async (e) => {
       // determine action: unsubscribe if currently subscribed
-      const currentlySubscribed = btn.classList.contains('subscribed');
+      const currentlySubscribed = subButton.classList.contains('subscribed');
       const targetUrl = currentlySubscribed ? unsubscribeUrl : subscribeUrl;
       const csrftoken = getCookie('csrftoken');
-      const body = new FormData();
-      body.append('event_id', eventId);
 
       try {
         const res = await fetch(targetUrl, {
           method: 'POST',
           headers: {
-            'X-Requested-With': 'XMLHttpRequest',
+            'Content-Type': 'application/json',
             'X-CSRFToken': csrftoken
           },
-          body
+          body : JSON.stringify({ event_id: eventId })
         });
         const data = await res.json();
         if (!res.ok) {
@@ -73,4 +67,6 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
   });
+
 });
+}

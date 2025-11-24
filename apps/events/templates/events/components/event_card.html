@@ -2,24 +2,23 @@
 {% load l10n %}
 
 <!-- Componente: Tarjeta de Evento -->
-<div class="event-card"
-    data-id="{{ evento.id }}"
-    {% localize off %}
-    data-lat="{% if evento.latitud != None %}{{ evento.latitud|floatformat:'6'|unlocalize }}{% endif %}"
-    data-lng="{% if evento.longitud != None %}{{ evento.longitud|floatformat:'6'|unlocalize }}{% endif %}"
-    {% endlocalize %}
-    style="cursor:pointer;">
+<div class="event-card" data-id="{{ evento.id }}" 
+{% localize off %}
+  data-lat="{% if evento.latitud != None %}{{ evento.latitud|floatformat:'6'|unlocalize }}{% endif %}"
+  data-lng="{% if evento.longitud != None %}{{ evento.longitud|floatformat:'6'|unlocalize }}{% endif %}" 
+{% endlocalize %} 
+style="cursor:pointer;">
 
   <!-- Imagen del evento -->
   <div class="event-image">
     {% if evento.photo %}
-      <img src="{{ evento.photo.url }}" alt="{{ evento.name }}">
+    <img src="{{ evento.photo.url }}" alt="{{ evento.name }}">
     {% else %}
-      <div class="default-image">
-        <div class="cloud cloud1"></div>
-        <div class="cloud cloud2"></div>
-        <div class="hill"></div>
-      </div>
+    <div class="default-image">
+      <div class="cloud cloud1"></div>
+      <div class="cloud cloud2"></div>
+      <div class="hill"></div>
+    </div>
     {% endif %}
   </div>
 
@@ -39,12 +38,12 @@
 
     {# Coordenadas visibles (solo display). NO tocar data-lat/lng arriba. #}
     {% if evento.latitud and evento.longitud %}
-      <div class="event-meta">
-        <span>
-          📍 {{ evento.latitud|floatformat:"6"|unlocalize }},
-          {{ evento.longitud|floatformat:"6"|unlocalize }}
-        </span>
-      </div>
+    <div class="event-meta">
+      <span>
+        📍 {{ evento.latitud|floatformat:"6"|unlocalize }},
+        {{ evento.longitud|floatformat:"6"|unlocalize }}
+      </span>
+    </div>
     {% endif %}
 
     <p class="event-description">
@@ -54,38 +53,31 @@
     <!-- Tags -->
     <div class="event-tags">
       {% if evento.tags %}
-        {% for tag in evento.tags.split %}
-          <span class="tag">{{ tag }}</span>
-        {% endfor %}
+      {% for tag in evento.tags.split %}
+      <span class="tag">{{ tag }}</span>
+      {% endfor %}
       {% endif %}
     </div>
 
     <!-- Acciones -->
     <div class="event-actions" style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
       {% if user.is_authenticated %}
-      <form method="post" action="{% url 'events:event_subscribe' %}"
-            class="subscribe-form"
-            data-subscribe-url="{% url 'events:event_subscribe' %}"
-            data-unsubscribe-url="{% url 'events:event_unsubscribe' %}"
-            data-event-id="{{ evento.id }}"
-            onsubmit="event.stopPropagation();">
-        {% csrf_token %}
-        <input type="hidden" name="event_id" value="{{ evento.id }}">
-        {% if evento.id in subscribed_event_ids %}
-          <button type="submit" class="attend-btn subscribed">Ya suscrito</button>
-        {% else %}
-          <button type="submit" class="attend-btn">Suscribirme 🚀</button>
-        {% endif %}
-        <div class="card-msg" aria-live="polite" style="margin-left:8px;"></div>
-      </form>
+      {% if evento.id in subscribed_event_ids %}
+      <button data-subscribeurl="{% url 'events:event_subscribe' %}"
+        data-unsubscribeurl="{% url 'events:event_unsubscribe' %}" data-eventid="{{ evento.id }}"
+        class="attend-btn subscribed">Ya suscrito</button>
+      {% else %}
+      <button data-subscribeurl="{% url 'events:event_subscribe' %}"
+        data-unsubscribeurl="{% url 'events:event_unsubscribe' %}" data-eventid="{{ evento.id }}"
+        class="attend-btn">Suscribirme 🚀</button>
+      {% endif %}
+
       {% else %}
       <a href="{% url 'account_login' %}?next={% url 'events:event_list' %}" class="attend-btn">Suscribirme 🚀</a>
       {% endif %}
 
       <!-- Botón Ver detalles -->
-      <a href="{% url 'events:event_detail' evento.id %}"
-         class="details-btn"
-         onclick="event.stopPropagation();">
+      <a href="{% url 'events:event_detail' evento.id %}" class="details-btn" onclick="event.stopPropagation();">
         🔍Ver detalles
       </a>
     </div>

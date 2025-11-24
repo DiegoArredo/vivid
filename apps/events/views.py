@@ -243,39 +243,32 @@ def subscribe(request):
     """
     if request.method != 'POST':
         return redirect('events:event_list')
+    try:
+        data = json.loads(request.body.decode('utf-8'))
+    except (json.JSONDecodeError, UnicodeDecodeError):
+        return JsonResponse({"error": "JSON inválido"}, status=400)
 
-    event_id = request.POST.get('event_id')
+    event_id = data.get('event_id')
     if not event_id:
-        messages.error(request, 'ID de evento faltante.')
-        return redirect(request.META.get('HTTP_REFERER', 'events:event_list'))
+        return JsonResponse({'status': 'error', 'message': 'ID de evento faltante.'}, status=400)
 
     try:
         evento = Event.objects.get(id=int(event_id))
     except (Event.DoesNotExist, ValueError):
-        messages.error(request, 'Evento no encontrado.')
-        return redirect(request.META.get('HTTP_REFERER', 'events:event_list'))
+        return JsonResponse({'status': 'error', 'message': 'Evento no encontrado.'}, status=404)
 
     # Intentar crear la suscripción, respetando la unicidad definida en HasSubs
     sub, created = HasSubs.objects.get_or_create(username=request.user, name=evento)
     message = f'Te has suscrito a "{evento.name}".' if created else f'Ya estás suscrito a "{evento.name}".'
 
     # Si la petición es AJAX, responder JSON para permitir actualización en página
-    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-        return JsonResponse({
-            'status': 'success' if created else 'info',
-            'message': message,
-            'subscribed': True,
-            'event_id': evento.id,
-            'attendees_count': evento.attendees.count(),
-        })
-
-    # Comportamiento por defecto (no-AJAX)
-    if created:
-        messages.success(request, message)
-    else:
-        messages.info(request, message)
-
-    return redirect(request.META.get('HTTP_REFERER', 'events:event_list'))
+    return JsonResponse({
+        'status': 'success' if created else 'info',
+        'message': message,
+        'subscribed': True,
+        'event_id': evento.id,
+        'attendees_count': evento.attendees.count(),
+    })
 
 
 @login_required
@@ -286,43 +279,33 @@ def unsubscribe(request):
     """
     if request.method != 'POST':
         return redirect('events:event_list')
+    try:
+        data = json.loads(request.body.decode('utf-8'))
+    except (json.JSONDecodeError, UnicodeDecodeError):
+        return JsonResponse({"error": "JSON inválido"}, status=400)
 
-    event_id = request.POST.get('event_id')
+    event_id = data.get('event_id')
     if not event_id:
-        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-            return JsonResponse({'status': 'error', 'message': 'ID de evento faltante.'}, status=400)
-        messages.error(request, 'ID de evento faltante.')
-        return redirect(request.META.get('HTTP_REFERER', 'events:event_list'))
-
+        return JsonResponse({'status': 'error', 'message': 'ID de evento faltante.'}, status=400)
     try:
         evento = Event.objects.get(id=int(event_id))
     except (Event.DoesNotExist, ValueError):
-        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-            return JsonResponse({'status': 'error', 'message': 'Evento no encontrado.'}, status=404)
-        messages.error(request, 'Evento no encontrado.')
-        return redirect(request.META.get('HTTP_REFERER', 'events:event_list'))
-
+        return JsonResponse({'status': 'error', 'message': 'Evento no encontrado.'}, status=404)    
+    
     deleted, _ = HasSubs.objects.filter(username=request.user, name=evento).delete()
     if deleted:
         message = f'Te has desuscrito de "{evento.name}".'
     else:
         message = f'No estabas suscrito a "{evento.name}".'
 
-    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-        return JsonResponse({
-            'status': 'success' if deleted else 'info',
-            'message': message,
-            'subscribed': False,
-            'event_id': evento.id,
-            'attendees_count': evento.attendees.count(),
-        })
-
-    if deleted:
-        messages.success(request, message)
-    else:
-        messages.info(request, message)
-    return redirect(request.META.get('HTTP_REFERER', 'events:event_list'))
-
+   
+    return JsonResponse({
+        'status': 'success' if deleted else 'info',
+        'message': message,
+        'subscribed': False,
+        'event_id': evento.id,
+        'attendees_count': evento.attendees.count(),
+    })
 
 # Vista de testeo de mapa
 def test_view(request):
