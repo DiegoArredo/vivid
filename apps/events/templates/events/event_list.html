@@ -110,6 +110,14 @@
 
   <script>
     document.addEventListener("DOMContentLoaded", () => {
+      console.log('🎯 DOMContentLoaded en event_list.html');
+      
+      // Inicializar listeners de suscripción PRIMERO
+      if (typeof window.initSubscriptionListeners === "function") {
+        console.log('🔧 Inicializando listeners de suscripción desde event_list.html');
+        window.initSubscriptionListeners();
+      }
+      
       if (typeof window.initEventListMap === "function") {
         window.initEventListMap();
       } else {
