@@ -503,26 +503,25 @@ const createEventCardHTML = (ev) => {
                  <div class="cloud cloud2"></div>
                  <div class="hill"></div>
                </div>`
-    }
+        }
   </div>
 
   <div class="event-details">
 
     <h3 class="event-title">${escapeHtml(name)}</h3>
 
-    <div class="event-meta">
-      <span>
-        📍
-        <span class="event-distance" data-distance>
-          ${
-              distancia != null
-                  ? escapeHtml(String(distancia)) + ' M'
-                  : '-- M'
-          }
-        </span>
-      </span>
-      <span>• ${escapeHtml(dateText)}</span>
-    </div>
+   <div class="event-meta">
+    <span>
+    📍
+    <span class="event-distance" data-distance>
+      ${distancia != null
+            ? escapeHtml(String(distancia)) + ' M'
+            : '-- M'
+        }
+    </span>
+  </span>
+  <span class="event-datetime">• ${escapeHtml(dateText)}</span>
+</div>
 
     <p class="event-location">${escapeHtml(location)}</p>
     <p class="event-organizer">de: ${escapeHtml(owner)}</p>
