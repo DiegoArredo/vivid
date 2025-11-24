@@ -83,6 +83,48 @@ def event_list(request):
             eventos = eventos.annotate(
                 num_attendees=Count('attendees')
             ).order_by('-num_attendees')
+
+        elif filter_type == 'cercanos':
+            # Ordenar por cercanía
+            # Filtrar eventos con coordenadas
+            eventos_con_coords = eventos.filter(
+                latitud__isnull=False,
+                longitud__isnull=False
+            )
+            
+            # Intentar obtener la ubicación del usuario desde los parámetros
+            user_lat = data.get('userLat')
+            user_lng = data.get('userLng')
+            
+            if user_lat and user_lng:
+                try:
+                    user_lat = float(user_lat)
+                    user_lng = float(user_lng)
+                    
+                    # Calcular distancia para cada evento y ordenar
+                    eventos_list = list(eventos_con_coords)
+                    for evento in eventos_list:
+                        if evento.latitud and evento.longitud:
+                            # Cálculo simple de distancia usando la fórmula de Haversine
+                            lat1, lon1 = math.radians(user_lat), math.radians(user_lng)
+                            lat2, lon2 = math.radians(float(evento.latitud)), math.radians(float(evento.longitud))
+                            
+                            dlat = lat2 - lat1
+                            dlon = lon2 - lon1
+                            
+                            a = math.sin(dlat/2)**2 + math.cos(lat1) * math.cos(lat2) * math.sin(dlon/2)**2
+                            c = 2 * math.asin(math.sqrt(a))
+                            r = 6371  # Radio de la Tierra en kilómetros
+                            
+                            evento.distance = c * r
+                        else:
+                            evento.distance = float('inf')
+                    
+                    eventos = sorted(eventos_list, key=lambda x: x.distance)
+                except (ValueError, AttributeError, TypeError):
+                    # Si hay error, ordenar por fecha
+                    eventos = eventos_con_coords.order_by('-date')
+
         else:
         # Filtro "all" o por defecto
             eventos = eventos
@@ -107,49 +149,6 @@ def event_list(request):
 
         response = {"events": events_data}
         return JsonResponse(response, status=200)
-    # elif filter_type == 'cercanos':
-    #     # Ordenar por cercanía
-    #     # Filtrar eventos con coordenadas
-    #     eventos_con_coords = eventos.filter(
-    #         latitud__isnull=False,
-    #         longitud__isnull=False
-    #     )
-        
-    #     # Intentar obtener la ubicación del usuario desde los parámetros
-    #     user_lat = request.GET.get('lat')
-    #     user_lng = request.GET.get('lng')
-        
-    #     if user_lat and user_lng:
-    #         try:
-    #             user_lat = float(user_lat)
-    #             user_lng = float(user_lng)
-                
-    #             # Calcular distancia para cada evento y ordenar
-    #             eventos_list = list(eventos_con_coords)
-    #             for evento in eventos_list:
-    #                 if evento.latitud and evento.longitud:
-    #                     # Cálculo simple de distancia usando la fórmula de Haversine
-    #                     lat1, lon1 = math.radians(user_lat), math.radians(user_lng)
-    #                     lat2, lon2 = math.radians(float(evento.latitud)), math.radians(float(evento.longitud))
-                        
-    #                     dlat = lat2 - lat1
-    #                     dlon = lon2 - lon1
-                        
-    #                     a = math.sin(dlat/2)**2 + math.cos(lat1) * math.cos(lat2) * math.sin(dlon/2)**2
-    #                     c = 2 * math.asin(math.sqrt(a))
-    #                     r = 6371  # Radio de la Tierra en kilómetros
-                        
-    #                     evento.distance = c * r
-    #                 else:
-    #                     evento.distance = float('inf')
-                
-    #             eventos = sorted(eventos_list, key=lambda x: x.distance)
-    #         except (ValueError, AttributeError, TypeError):
-    #             # Si hay error, ordenar por fecha
-    #             eventos = eventos_con_coords.order_by('-date')
-    #     else:
-    #         # Sin ubicación del usuario, mostrar eventos con coordenadas ordenados por fecha
-    #         eventos = eventos_con_coords.order_by('-date')
    
     #Obtener eventos
     else:
@@ -171,19 +170,7 @@ def event_list(request):
         }
 
         return render(request, 'events/event_list.html', context)
-
-# def event_list_filtered(request):
-
-    
-#     # Obtener parámetros de filtrado
-#     filter_type = request.GET.get('filter', 'all')
-#     search_query = request.GET.get('search', '').strip()
-#     category_id = request.GET.get('category', None)
-    
-#     if request.method == "POST":
-#         filter_type = request.POST.get("filter_type")
-#         category_id = request.POST.get("category_id")
-        
+      
 
 
 #@login_required(login_url='/users/login/')

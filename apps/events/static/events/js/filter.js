@@ -25,46 +25,69 @@ const csrftoken = getCookie('csrftoken');
 // Geolocalización
 // ===============================
 
+// Variable global para cachear la ubicación del usuario
+let currentUserLocation = null;
+
 /**
  * Pide la ubicación del usuario (si no la teníamos) y llama a callback
  * con {lat, lng} o null si falla / deniega permiso.
  */
-let currentUserLocation = null;
-
 function getUserLocation(callback) {
+    // Si ya tenemos la ubicación en caché, usarla directamente
     if (currentUserLocation) {
+        console.log('Usando ubicación en caché:', currentUserLocation);
         callback(currentUserLocation);
         return;
     }
 
     if (!navigator.geolocation) {
-        console.warn('Geolocalización no soportada por el navegador');
+        console.error('❌ Geolocalización no soportada en este navegador');
+        alert('Tu navegador no soporta geolocalización. Por favor, actualiza tu navegador.');
         callback(null);
         return;
     }
 
+    console.log('🔍 Solicitando ubicación al usuario...');
+    
     navigator.geolocation.getCurrentPosition(
-    position => {
-        currentUserLocation = {
-            lat: position.coords.latitude,
-            lng: position.coords.longitude
-        };
-        window.currentUserLocation = currentUserLocation;
-        console.log('[geo] ubicación obtenida:', currentUserLocation);
-        callback(currentUserLocation);
-    },
-    error => {
-        console.warn('No se pudo obtener la ubicación:', error);
-        callback(null);
-    },
-    {
-        enableHighAccuracy: true,
-        timeout: 10000,
-        maximumAge: 0
-    }
-);
-
+        position => {
+            currentUserLocation = {
+                lat: position.coords.latitude,
+                lng: position.coords.longitude
+            };
+            console.log('✅ Ubicación obtenida:', currentUserLocation);
+            callback(currentUserLocation);
+        },
+        error => {
+            let errorMsg = '';
+            switch(error.code) {
+                case error.PERMISSION_DENIED:
+                    errorMsg = '❌ Permiso de ubicación denegado. Por favor, habilita los permisos de ubicación en tu navegador.';
+                    alert('Para ver eventos cercanos, necesitas permitir el acceso a tu ubicación.\n\n' +
+                          'En Chrome: Haz clic en el ícono 🔒 o ℹ️ en la barra de direcciones → Permisos → Ubicación → Permitir\n' +
+                          'En Firefox: Haz clic en el ícono 🔒 en la barra de direcciones → Permisos → Compartir ubicación → Permitir');
+                    break;
+                case error.POSITION_UNAVAILABLE:
+                    errorMsg = '❌ Información de ubicación no disponible. Verifica tu conexión GPS/Wi-Fi.';
+                    break;
+                case error.TIMEOUT:
+                    errorMsg = '❌ Tiempo de espera agotado al obtener ubicación. Intenta nuevamente.';
+                    break;
+                default:
+                    errorMsg = '❌ Error desconocido al obtener ubicación.';
+            }
+            console.error(errorMsg, error);
+            callback(null);
+        },
+        {
+            enableHighAccuracy: false,  // Más rápido pero menos preciso
+            timeout: 10000,             // 10 segundos de timeout
+            maximumAge: 300000          // Acepta ubicación de hasta 5 minutos
+        }
+    );
 }
+
+
 
 // ===============================
 // Filtro vía POST
@@ -200,10 +223,23 @@ document.addEventListener('DOMContentLoaded', function() {
             console.log("Valor de búsqueda:", searchValue);
 
             if (filter === 'cercanos') {
+                // Mostrar feedback visual
+                button.innerHTML = '📍 Obteniendo ubicación...';
+                button.disabled = true;
+                
                 getUserLocation((location) => {
+                    // Restaurar botón
+                    button.innerHTML = 'Más Cercanos';
+                    button.disabled = false;
+                    
                     if (!location) {
-                        console.warn('No hay ubicación de usuario, se aplicará filtro "cercanos" sin lat/lng');
-                        applyfilter(filter, searchValue, categoryId, null);
+                        console.warn('No hay ubicación de usuario, mostrando todos los eventos');
+                        alert('No se pudo obtener tu ubicación. Mostrando todos los eventos.');
+                        // Cambiar al filtro "all"
+                        button.classList.remove('active');
+                        const allButton = document.querySelector('.filter-btn[data-filter="all"]');
+                        if (allButton) allButton.classList.add('active');
+                        applyfilter('all', searchValue, categoryId, null);
                         return;
                     }
 
