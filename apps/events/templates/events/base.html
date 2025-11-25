@@ -24,10 +24,10 @@
 
 <body>
   <!-- Mensajes de Django -->
-  <div id="messagesDiv" class="messages">
+  <div id="messagesDiv" >
     {% if messages %}
       {% for message in messages %}
-      <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+      <div class="messages" class="alert alert-{{ message.tags }}">{{ message }}</div>
       {% endfor %}
     {% endif %}
   </div>
