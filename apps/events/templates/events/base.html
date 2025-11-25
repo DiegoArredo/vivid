@@ -27,7 +27,7 @@
   <div id="messagesDiv" >
     {% if messages %}
       {% for message in messages %}
-      <div class="messages" class="alert alert-{{ message.tags }}">{{ message }}</div>
+      <div class="messages alert alert-{{ message.tags }}">{{ message }}</div>
       {% endfor %}
     {% endif %}
   </div>
@@ -86,7 +86,7 @@
       const messages = document.querySelector('.messages');
       if (messages) {
         messages.style.animation = 'slideInRight 0.3s ease reverse';
-        setTimeout(() => messages.remove(), 300);
+        setTimeout(() => messages.remove(), 6000);
       }
     }, 5000);
   </script>
