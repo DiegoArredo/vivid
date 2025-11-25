@@ -14,9 +14,10 @@ body {
 
 /* Variables CSS para colores principales */
 :root {
-    --primary-color: #FF7B54;
-    --primary-hover: #FF6B44;
-    --primary-light: #FF9671;
+    --primary-color: #E85D35; 
+    --primary-hover: #D14D25;
+    --primary-light: #FF7B54; 
+    --primary-dark: #C43D1A;
     --text-dark: #333;
     --text-medium: #666;
     --text-light: #888;
@@ -65,6 +66,7 @@ body {
 .slide-in {
     animation: slideIn 0.5s ease;
 }
+
 /* Ajustes globales para popups de MapLibre */
 .maplibregl-popup-content {
   background: transparent !important;

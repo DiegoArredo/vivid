@@ -480,6 +480,15 @@ document.addEventListener('DOMContentLoaded', function () {
 // Helpers para crear cards y listeners
 // ===============================
 
+// Define el HTML para el icono de ubicación usando la misma ruta que en event-card.html
+const LOCATION_ICON_HTML = `
+  <img src="/static/events/images/icons/location-icon.svg" alt="Ubicación" class="location-icon">
+`;
+
+
+
+
+
 /**
  * Crea el HTML de una card de evento (equivalente a event_card.html)
  * @param {Object} ev - Objeto evento con propiedades del servidor
@@ -517,8 +526,8 @@ function createEventCardHTML(ev, options = {}) {
     
     // Imagen del evento
     let imageHTML = '';
-    if (ev.photo_url) {
-        imageHTML = `<img src="${escapeHtml(ev.photo_url)}" alt="${escapedName}">`;
+    if (ev.photo) {
+        imageHTML = `<img src="${escapeHtml(ev.photo)}" alt="${escapedName}">`;
     } else {
         imageHTML = `
             <div class="default-image">
@@ -544,7 +553,7 @@ function createEventCardHTML(ev, options = {}) {
     if (isAuthenticated) {
         const isSubscribed = subscribedEventIds.includes(ev.id);
         const btnClass = isSubscribed ? 'attend-btn subscribed' : 'attend-btn';
-        const btnText = isSubscribed ? 'Ya suscrito' : 'Suscribirme 🚀';
+        const btnText = isSubscribed ? 'Ya suscrito' : `Suscribirme <img src="/static/events/images/icons/assist-rocket.svg" alt="" class="btn-icon">`;
         
         // URLs hardcoded (ajusta según tu urls.py si es necesario)
         const subscribeUrl = '/subscribe/';
@@ -557,6 +566,7 @@ function createEventCardHTML(ev, options = {}) {
                 data-eventid="${ev.id}"
                 class="${btnClass}"
             >
+            
                 ${btnText}
             </button>
         `;
@@ -573,7 +583,7 @@ function createEventCardHTML(ev, options = {}) {
     if (lat && lng) {
         coordsHTML = `
             <div class="event-meta">
-                <span>📍 ${lat}, ${lng}</span>
+                <span>${LOCATION_ICON_HTML} ${lat}, ${lng}</span>
             </div>
         `;
     }
@@ -610,7 +620,11 @@ function createEventCardHTML(ev, options = {}) {
                 ${subscribersCountHTML}
                 <p class="event-organizer">de: ${escapedOwner}</p>
                 <div class="event-meta">
-                
+                <span>${LOCATION_ICON_HTML} ${
+                    distancia != null
+                    ? escapeHtml(String(distancia)) + ' M'
+                    : '-- M'
+                }</span>
                 <span class="event-datetime">Fecha: ${formattedDate}</span>
                 </div>
                 <p class="event-location">${escapedLocation}</p>
@@ -632,7 +646,8 @@ function createEventCardHTML(ev, options = {}) {
                     <a href="/evento/${ev.id}/" 
                        class="details-btn" 
                        onclick="event.stopPropagation();">
-                        🔍Ver detalles
+                        <img src="/static/events/images/icons/info-icon.svg" alt="" class="btn-icon">
+                        <span>Ver detalles</span>
                     </a>
                 </div>
             </div>

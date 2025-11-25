@@ -37,7 +37,9 @@
     <div class="logo-section">
       <a href="{% url 'events:event_list' %}"
         style="display: flex; align-items: center; gap: 15px; text-decoration: none;">
-        <div class="logo">🚀</div>
+        <div class="logo">
+          <img src="{% static 'events/images/vivid-logo.svg' %}" alt="Vivid Logo" class="logo-svg">
+        </div>
         <div class="logo-text">
           <h1>Vivid</h1>
           <p>Tu próxima aventura te espera</p>
@@ -58,7 +60,6 @@
       <span style="color: white; font-size: 14px;">Hola, {{ user.username }}</span>
         
       <div class="user-icon">
-      
         {{ user.username|first|upper }}
       </div>
       {% else %}
@@ -69,7 +70,7 @@
       <a href="{% url 'account_signup' %}"
         style="background: white; color: var(--primary-color); padding: 8px 16px; border-radius: 20px; font-weight: 600;">Registrarme</a>
       <div class="user-icon">
-        👤 
+        <img src="{% static 'events/images/icons/profile-icon.svg' %}" alt="Usuario" class="user-icon-svg">
       </div>
       {% endif %}
 

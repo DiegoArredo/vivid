@@ -29,7 +29,8 @@
     <div class="detail-content">
         <div class="detail-actions">
             <a href="{% url 'events:event_list' %}" class="btn-back">
-                ⬅ Volver
+                <img src="{% static 'events/images/icons/back-icon.svg' %}" alt="Volver" class="btn-icon">
+                Volver
             </a>
 
             <!-- Boton suscripcion -->
@@ -41,7 +42,9 @@
       {% else %}
       <button data-subscribeurl="{% url 'events:event_subscribe' %}"
         data-unsubscribeurl="{% url 'events:event_unsubscribe' %}" data-eventid="{{ evento.id }}"
-        class="attend-btn btn-attend">Suscribirme 🚀</button>
+        class="attend-btn btn-attend">
+        <img src="{% static 'events/images/icons/assist-rocket.svg' %}" alt="Asistir" class="btn-icon">
+        Suscribirme </button>
       {% endif %}
 
       {% else %}
@@ -50,6 +53,7 @@
 
 
             <button class="btn-share">
+                <img src="{% static 'events/images/icons/share-icon.svg' %}" alt="Compartir" class="btn-icon">
                 Compartir
             </button>
         </div>
@@ -57,7 +61,9 @@
         <div class="detail-section">
             <div class="info-grid">
                 <div class="info-item">
-                    <span class="info-icon">📅</span>
+                    <span class="info-icon">
+                        <img src="{% static 'events/images/icons/calendar-icon.svg' %}" alt="Fecha y hora" class="calendar-icon">
+                    </span>
                     <div class="info-text">
                         <span class="info-label">Fecha y hora</span>
                         <span class="info-value">{{ evento.date|date:"d/m/Y - H:i" }} hrs</span>
@@ -65,7 +71,10 @@
                 </div>
 
                 <div class="info-item">
-                    <span class="info-icon">📍</span>
+                    <span class="info-icon">
+                        <img src="{% static 'events/images/icons/location-icon.svg' %}" alt="Ubicación" class="location-icon">
+                    </span>
+
                     <div class="info-text">
                         <span class="info-label">Ubicación</span>
                         <span class="info-value">{{ evento.location|default:"Sin ubicación especificada" }}</span>
@@ -73,16 +82,21 @@
                 </div>
 
                 <div class="info-item">
-                    <span class="info-icon">👤</span>
+                    <span class="info-icon">
+                        <img src="{% static 'events/images/icons/organizer-icon.svg' %}" alt="Organizador" class="profile-icon">
+                    </span>
                     <div class="info-text">
                         <span class="info-label">Organizador</span>
                         <span class="info-value">{{ evento.owner.username }}</span>
                     </div>
                 </div>
 
+
                 {% if evento.category %}
                 <div class="info-item">
-                    <span class="info-icon">🏷️</span>
+                    <span class="info-icon">
+                        <img src="{% static 'events/images/icons/tag-icon.svg' %}" alt="Categoría" class="tag-icon">
+                    </span>
                     <div class="info-text">
                         <span class="info-label">Categoría</span>
                         <span class="info-value">{{ evento.category.category }}</span>
@@ -146,7 +160,6 @@
         {% endif %}
 
         <!-- Botones de acción -->
-        
     </div>
 </div>
 {% endblock %}

@@ -152,6 +152,7 @@ def event_list(request):
                         ev.owner.username if getattr(ev, "owner", None) else None
                     ),
                     "subscription_count": ev.attendees.count(),
+                    "photo": ev.photo.url if ev.photo else None,
                 }
             )
         
