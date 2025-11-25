@@ -102,7 +102,7 @@
         </div>
         {% endif %}
 
-        <!-- Mapa (tiene coordenadas) -->
+        <!-- Mapa (si tiene coordenadas) -->
         {% if evento.latitud and evento.longitud %}
         {% localize off %}
         <div class="detail-section">
@@ -124,35 +124,37 @@
                 ⬅️ Volver
             </a>
             
-            <!-- **NUEVO: Lógica de suscripción igual que en event_card.html** -->
+            {# ========== LÓGICA DE SUSCRIPCIÓN ========== #}
             {% if user.is_authenticated %}
                 {% if is_owner %}
-                    <!-- Si es el organizador, mostrar botón deshabilitado -->
-                    <button class="btn-attend subscribed" disabled title="Eres el organizador de este evento">
+                    {# Organizador: botón deshabilitado #}
+                    <button class="btn-attend attend-btn subscribed" disabled title="Eres el organizador de este evento">
                         Ya suscrito ✓
                     </button>
                 {% elif is_subscribed %}
-                    <!-- Si está suscrito, mostrar botón para desuscribirse -->
+                    {# Suscrito: botón para desuscribirse #}
+                    {# ⚠️ CRÍTICO: Usa AMBAS clases btn-attend (CSS) y attend-btn (JS) #}
                     <button 
                         data-subscribeurl="{% url 'events:event_subscribe' %}"
                         data-unsubscribeurl="{% url 'events:event_unsubscribe' %}"
                         data-eventid="{{ evento.id }}"
-                        class="btn-attend subscribed">
+                        class="btn-attend attend-btn subscribed">
                         Ya suscrito
                     </button>
                 {% else %}
-                    <!-- Si no está suscrito, mostrar botón para suscribirse -->
+                    {# No suscrito: botón para suscribirse #}
+                    {# ⚠️ CRÍTICO: Usa AMBAS clases btn-attend (CSS) y attend-btn (JS) #}
                     <button 
                         data-subscribeurl="{% url 'events:event_subscribe' %}"
                         data-unsubscribeurl="{% url 'events:event_unsubscribe' %}"
                         data-eventid="{{ evento.id }}"
-                        class="btn-attend">
+                        class="btn-attend attend-btn">
                         Suscribirme 🚀
                     </button>
                 {% endif %}
             {% else %}
-                <!-- Si no está autenticado, redirigir al login -->
-                <a href="{% url 'account_login' %}?next={{ request.path }}" class="btn-attend">
+                {# No autenticado: link al login #}
+                <a href="{% url 'account_login' %}?next={{ request.path }}" class="btn-attend attend-btn">
                     Suscribirme 🚀
                 </a>
             {% endif %}
@@ -166,6 +168,7 @@
 {% endblock %}
 
 {% block extra_js %}
+{# ==================== MAPA (opcional) ==================== #}
 {% if evento.latitud and evento.longitud %}
 <script src="{% static 'events/js/map.js' %}"></script>
 <script>
@@ -177,18 +180,38 @@
 </script>
 {% endif %}
 
-<!-- **NUEVO: Script para manejar suscripciones en vista de detalle** -->
+{# ==================== SUSCRIPCIONES ==================== #}
+{# ⚠️ Este bloque debe estar FUERA del if del mapa #}
 {% if user.is_authenticated and not is_owner %}
 <script src="{% static 'events/js/subscriptions.js' %}"></script>
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('🎯 Inicializando listeners de suscripción en detail view');
-    
-    // Reutilizar la función que ya existe en subscriptions.js
-    if (typeof window.initSubscriptionListeners === "function") {
+  // ⚡ SOLUCIÓN: Forzar inicialización del event delegation
+  // subscriptions.js escucha DOMContentLoaded, pero si el script se carga tarde,
+  // ese evento ya ocurrió. Forzamos inicialización manual.
+  
+  if (typeof window.initSubscriptionListeners === 'function') {
+    // Si el DOM todavía está cargando, esperar a DOMContentLoaded
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', function() {
         window.initSubscriptionListeners();
+        console.log('✅ [event_detail] Event delegation inicializado (DOMContentLoaded)');
+      });
+    } else {
+      // El DOM ya está listo, inicializar inmediatamente
+      window.initSubscriptionListeners();
+      console.log('✅ [event_detail] Event delegation inicializado (inmediato)');
     }
-});
+    
+    // Verificar que funcionó
+    setTimeout(() => {
+      console.log('📊 [event_detail] Estado final:');
+      console.log('   - subscriptionDelegationInitialized:', window.subscriptionDelegationInitialized);
+      console.log('   - Botón encontrado:', document.querySelector('.attend-btn') !== null);
+    }, 100);
+  } else {
+    console.error('❌ [event_detail] initSubscriptionListeners no está definido');
+    console.error('   ¿subscriptions.js se cargó correctamente?');
+  }
 </script>
 {% endif %}
 {% endblock %}
