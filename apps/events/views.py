@@ -3,6 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.http import HttpResponse, JsonResponse
 from .models import Event
+from .models import Event, HasSubs
 from .forms import EventForm
 from .utils import geocode_address
 import json
@@ -158,10 +159,19 @@ def event_list(request):
 
         categorias = Category.objects.all()
 
-        context = {"eventos": eventos, "categorias": categorias}
+        # Optimización: obtener ids de eventos a los que el usuario está suscrito
+        if request.user.is_authenticated:
+            subscribed_event_ids = list(HasSubs.objects.filter(username=request.user).values_list('name_id', flat=True))
+        else:
+            subscribed_event_ids = []
 
-        return render(request, "events/event_list.html", context)
+        context = {
+            'eventos': eventos,
+            'categorias': categorias,
+            'subscribed_event_ids': subscribed_event_ids,
+        }
 
+        return render(request, 'events/event_list.html', context)
 
 # def event_list_filtered(request):
 
@@ -221,6 +231,81 @@ def event_detail(request, event_id):
 
     return render(request, "events/event_detail.html", context)
 
+
+@login_required
+def subscribe(request):
+    """Procesa la suscripción de un usuario a un evento.
+
+    Se espera un POST con `event_id`. Si la suscripción ya existe, muestra
+    un mensaje informativo; si se crea correctamente, muestra éxito.
+    Redirige a la página desde la que vino el request (HTTP_REFERER) o a
+    la lista de eventos como fallback.
+    """
+    if request.method != 'POST':
+        return redirect('events:event_list')
+    try:
+        data = json.loads(request.body.decode('utf-8'))
+    except (json.JSONDecodeError, UnicodeDecodeError):
+        return JsonResponse({"error": "JSON inválido"}, status=400)
+
+    event_id = data.get('event_id')
+    if not event_id:
+        return JsonResponse({'status': 'error', 'message': 'ID de evento faltante.'}, status=400)
+
+    try:
+        evento = Event.objects.get(id=int(event_id))
+    except (Event.DoesNotExist, ValueError):
+        return JsonResponse({'status': 'error', 'message': 'Evento no encontrado.'}, status=404)
+
+    # Intentar crear la suscripción, respetando la unicidad definida en HasSubs
+    sub, created = HasSubs.objects.get_or_create(username=request.user, name=evento)
+    message = f'Te has suscrito a "{evento.name}".' if created else f'Ya estás suscrito a "{evento.name}".'
+
+    # Si la petición es AJAX, responder JSON para permitir actualización en página
+    return JsonResponse({
+        'status': 'success' if created else 'info',
+        'message': message,
+        'subscribed': True,
+        'event_id': evento.id,
+        'attendees_count': evento.attendees.count(),
+    })
+
+
+@login_required
+def unsubscribe(request):
+    """Procesa la desuscripción de un usuario a un evento (POST).
+
+    Responde JSON si la petición es AJAX, o redirect si es una petición normal.
+    """
+    if request.method != 'POST':
+        return redirect('events:event_list')
+    try:
+        data = json.loads(request.body.decode('utf-8'))
+    except (json.JSONDecodeError, UnicodeDecodeError):
+        return JsonResponse({"error": "JSON inválido"}, status=400)
+
+    event_id = data.get('event_id')
+    if not event_id:
+        return JsonResponse({'status': 'error', 'message': 'ID de evento faltante.'}, status=400)
+    try:
+        evento = Event.objects.get(id=int(event_id))
+    except (Event.DoesNotExist, ValueError):
+        return JsonResponse({'status': 'error', 'message': 'Evento no encontrado.'}, status=404)    
+    
+    deleted, _ = HasSubs.objects.filter(username=request.user, name=evento).delete()
+    if deleted:
+        message = f'Te has desuscrito de "{evento.name}".'
+    else:
+        message = f'No estabas suscrito a "{evento.name}".'
+
+   
+    return JsonResponse({
+        'status': 'success' if deleted else 'info',
+        'message': message,
+        'subscribed': False,
+        'event_id': evento.id,
+        'attendees_count': evento.attendees.count(),
+    })
 
 # Vista de testeo de mapa
 def test_view(request):

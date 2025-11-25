@@ -238,14 +238,19 @@ window.updateMapMarkers = function () {
 
 // Vuelve a asociar los listeners de click a las cards
 window.attachCardClickListeners = function () {
-  // limpiar posibles handlers anteriores
+  console.log('[map] attachCardClickListeners llamado');
+  
+  // NO clonar las cards porque eso destruye los listeners de los botones de suscripción
+  // En su lugar, solo eliminar listeners existentes de las cards si ya tienen el flag
   document.querySelectorAll(".event-card").forEach((card) => {
     card.style.cursor = "pointer";
-    const clone = card.cloneNode(true);
-    card.replaceWith(clone);
-  });
-
-  document.querySelectorAll(".event-card").forEach((card) => {
+    
+    // Si ya tiene listener de card, no agregar otro
+    if (card.dataset.cardListenerAttached === 'true') {
+      return;
+    }
+    card.dataset.cardListenerAttached = 'true';
+    
     const id = Number(card.dataset.id || card.dataset.eventId);
     const rawLat = card.dataset.lat;
     const rawLng = card.dataset.lng;
@@ -259,7 +264,9 @@ window.attachCardClickListeners = function () {
       : NaN;
 
     card.addEventListener("click", (ev) => {
+      // Ignorar clicks en botones y enlaces
       if (ev.target.closest(".details-btn")) return;
+      if (ev.target.closest(".attend-btn")) return;
       if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
 
       window.vividMap.flyTo({ center: [lng, lat], zoom: 16 });
@@ -271,6 +278,12 @@ window.attachCardClickListeners = function () {
       card.classList.add("selected");
     });
   });
+  
+  // Después de agregar listeners a las cards, reinicializar los de suscripción
+  if (typeof window.initSubscriptionListeners === 'function') {
+    console.log('[map] Reinicializando listeners de suscripción después de agregar listeners a cards');
+    window.initSubscriptionListeners();
+  }
 };
 
 

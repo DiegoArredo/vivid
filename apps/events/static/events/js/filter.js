@@ -256,6 +256,12 @@ const applyfilter = (filterType, searchValue = null, categoryId = null, userLoca
 
             } catch (err) {
                 console.error('Error vaciando/creando cards en #eventos-list:', err);
+                // Reinicializar los listeners de suscripción para los nuevos botones
+                if (typeof window.initSubscriptionListeners === 'function') {
+                    window.initSubscriptionListeners();
+                }
+
+                console.log('Se agregaron', events.length, 'cards al DOM.');
             }
         });
 };
@@ -551,8 +557,10 @@ const createEventCardHTML = (ev) => {
 
     <div class="event-actions" style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
       <button class="attend-btn"
-              onclick="event.stopPropagation(); alert('Funcionalidad de asistir próximamente');">
-        Asistir 🚀
+              data-subscribeurl="/subscribe/"
+              data-unsubscribeurl="/unsubscribe/"
+              data-eventid="${escapeHtml(id)}">
+        Suscribirme 🚀
       </button>
 
       <!-- Botón Ver detalles -->

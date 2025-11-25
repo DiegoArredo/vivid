@@ -101,14 +101,23 @@
   {% endfor %}
 ]
 </script>
-
+ 
 
 {% block extra_js %}
   <script src="{% static 'events/js/map.js' %}"></script>
   <script src="{% static 'events/js/filter.js' %}"></script>
+  <script src="{% static 'events/js/subscriptions.js' %}"></script>
 
   <script>
     document.addEventListener("DOMContentLoaded", () => {
+      console.log('🎯 DOMContentLoaded en event_list.html');
+      
+      // Inicializar listeners de suscripción PRIMERO
+      if (typeof window.initSubscriptionListeners === "function") {
+        console.log('🔧 Inicializando listeners de suscripción desde event_list.html');
+        window.initSubscriptionListeners();
+      }
+      
       if (typeof window.initEventListMap === "function") {
         window.initEventListMap();
       } else {
