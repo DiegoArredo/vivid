@@ -264,7 +264,7 @@ def subscribe(request):
         'message': message,
         'subscribed': True,
         'event_id': evento.id,
-        'attendees_count': evento.attendees.count(),
+        'subscription_count': evento.attendees.count(),
     })
 
 
@@ -301,7 +301,7 @@ def unsubscribe(request):
         'message': message,
         'subscribed': False,
         'event_id': evento.id,
-        'attendees_count': evento.attendees.count(),
+        'subscription_count': evento.attendees.count(),
     })
 
 # Vista de testeo de mapa
