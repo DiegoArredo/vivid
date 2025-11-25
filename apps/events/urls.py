@@ -9,5 +9,6 @@ urlpatterns = [
     path('evento/<int:event_id>/', views.event_detail, name='event_detail'),
     path('subscribe/', views.subscribe, name='event_subscribe'),
     path('unsubscribe/', views.unsubscribe, name='event_unsubscribe'),
+    path('calendario/', views.calendar_view, name='calendar'),
     path('test/', views.test_view, name='test'),
 ]

@@ -313,6 +313,48 @@ def unsubscribe(request):
         'attendees_count': evento.attendees.count(),
     })
 
+@login_required
+def calendar_view(request):
+    """Vista de calendario interactivo con eventos suscritos del usuario"""
+    # Obtener todos los eventos a los que el usuario está suscrito
+    suscripciones = HasSubs.objects.filter(username=request.user).select_related('name')
+    eventos_suscritos = [sub.name for sub in suscripciones]
+    
+    # Agrupar eventos por mes
+    eventos_por_mes = {}
+    for evento in eventos_suscritos:
+        fecha = evento.date
+        mes_key = f"{fecha.year}-{fecha.month:02d}"
+        if mes_key not in eventos_por_mes:
+            eventos_por_mes[mes_key] = []
+        eventos_por_mes[mes_key].append({
+            'id': evento.id,
+            'name': evento.name,
+            'date': evento.date.isoformat(),
+            'date_formatted': evento.date.strftime('%d de %B de %Y'),
+            'time_formatted': evento.date.strftime('%H:%M'),
+            'location': evento.location,
+            'category': evento.category.category if evento.category else 'Sin categoría',
+            'organizer': evento.owner.username,
+        })
+    
+    # Obtener el mes actual
+    from datetime import datetime
+    hoy = datetime.now()
+    mes_actual = f"{hoy.year}-{hoy.month:02d}"
+    
+    # Convertir a JSON string para el template
+    eventos_por_mes_json = json.dumps(eventos_por_mes)
+    
+    context = {
+        'eventos_suscritos': eventos_suscritos,
+        'eventos_por_mes': eventos_por_mes_json,
+        'mes_actual': mes_actual,
+    }
+    
+    return render(request, 'events/calendar.html', context)
+
+
 # Vista de testeo de mapa
 def test_view(request):
     return render(request, "events/tests/test_mapa.html")

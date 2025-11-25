@@ -1,0 +1,243 @@
+{% extends 'events/base.html' %}
+{% load static %}
+
+{% block title %}Calendario - Vivid{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'events/css/calendar.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="calendar-container">
+    <!-- Encabezado -->
+    <div class="calendar-header">
+        <h1 class="calendar-title">📅 Mi Calendario</h1>
+    </div>
+
+    {% if eventos_suscritos %}
+    <!-- Contenido principal -->
+    <div class="calendar-main">
+        <!-- Grid del calendario -->
+        <div class="calendar-grid">
+            <!-- Controles de mes centrados en el grid -->
+            <div class="calendar-grid-header">
+                <button id="prev-month" class="nav-button">‹</button>
+                <div class="month-display"></div>
+                <button id="next-month" class="nav-button">›</button>
+                <button id="today-btn" class="today-button">Hoy</button>
+            </div>
+
+            <!-- Encabezados de días -->
+            <div class="weekdays">
+                <div class="weekday-label">Dom</div>
+                <div class="weekday-label">Lun</div>
+                <div class="weekday-label">Mar</div>
+                <div class="weekday-label">Mié</div>
+                <div class="weekday-label">Jue</div>
+                <div class="weekday-label">Vie</div>
+                <div class="weekday-label">Sab</div>
+            </div>
+
+            <!-- Grid de días -->
+            <div id="days-grid" class="days-grid"></div>
+        </div>
+
+        <!-- Sidebar con detalles -->
+        <div class="calendar-sidebar">
+            <h3 class="sidebar-title">📍 Detalles del Día</h3>
+            
+            <div class="selected-date">
+                <strong>Selecciona un día</strong>
+            </div>
+
+            <div id="day-events" class="day-events">
+                <div class="no-events-message">No hay eventos seleccionados</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Resumen estadístico con secciones collapsibles -->
+    <div class="calendar-summary">
+        <!-- Eventos Suscritos -->
+        <div class="summary-section" id="subscribed-section">
+            <div class="summary-section-header" data-section="subscribed">
+                <span class="section-toggle">▼</span>
+                <div class="summary-value">{{ eventos_suscritos|length }}</div>
+                <div class="summary-label">Eventos Suscritos</div>
+            </div>
+            <div class="section-content subscribed-content" style="display: none;">
+                <div class="events-list-container">
+                    {% for evento in eventos_suscritos %}
+                    <div class="summary-event-item" data-event-id="{{ evento.id }}">
+                        <div class="event-item-name">{{ evento.name }}</div>
+                        <div class="event-item-meta">{{ evento.date|date:'d/m/Y H:i' }}</div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        
+        {% if eventos_suscritos %}
+        <!-- Eventos Este Mes -->
+        <div class="summary-section" id="this-month-section">
+            <div class="summary-section-header" data-section="this-month">
+                <span class="section-toggle">▼</span>
+                <div class="summary-value" id="this-month-count">0</div>
+                <div class="summary-label">Eventos Este Mes</div>
+            </div>
+            <div class="section-content this-month-content" style="display: none;">
+                <div class="events-list-container" id="this-month-events"></div>
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Próximos Eventos -->
+        <div class="summary-section" id="upcoming-section">
+            <div class="summary-section-header" data-section="upcoming">
+                <span class="section-toggle">▼</span>
+                <div class="summary-value" id="upcoming-count">0</div>
+                <div class="summary-label">Próximos Eventos</div>
+            </div>
+            <div class="section-content upcoming-content" style="display: none;">
+                <div class="events-list-container" id="upcoming-events"></div>
+            </div>
+        </div>
+    </div>
+
+    {% else %}
+    <!-- Estado vacío -->
+    <div class="empty-state">
+        <div class="empty-state-icon">📅</div>
+        <h2 class="empty-state-title">No tienes eventos suscritos</h2>
+        <p class="empty-state-text">Suscríbete a eventos para verlos en tu calendario personal</p>
+        <a href="{% url 'events:event_list' %}" class="empty-state-button">Explorar Eventos</a>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Script del calendario -->
+<script src="{% static 'events/js/calendar.js' %}"></script>
+
+<!-- Datos JSON embebidos como script tag -->
+<script id="calendar-events-data" type="application/json">
+{{ eventos_por_mes|safe }}
+</script>
+
+<script>
+    // Inicializar calendario con datos del servidor
+    document.addEventListener('DOMContentLoaded', function() {
+        // Obtener datos de eventos desde el script tag JSON (evita errores de linter)
+        const dataScript = document.getElementById('calendar-events-data');
+        const eventsByMonth = dataScript ? JSON.parse(dataScript.textContent) : {};
+        
+        // Inicializar calendario
+        window.calendar = new InteractiveCalendar(eventsByMonth);
+        
+        // Compilar todos los eventos
+        const allEvents = [];
+        Object.values(eventsByMonth).forEach(monthEvents => {
+            allEvents.push(...monthEvents);
+        });
+
+        // Calcular eventos próximos
+        const now = new Date();
+        now.setHours(0, 0, 0, 0);
+        let upcomingCount = 0;
+        const upcomingEvents = [];
+        const thisMonthEvents = [];
+
+        const currentMonth = now.getMonth();
+        const currentYear = now.getFullYear();
+
+        allEvents.forEach(event => {
+            const eventDate = new Date(event.date);
+            eventDate.setHours(0, 0, 0, 0);
+            
+            if (eventDate >= now) {
+                upcomingCount++;
+                upcomingEvents.push(event);
+            }
+            
+            if (eventDate.getMonth() === currentMonth && eventDate.getFullYear() === currentYear) {
+                thisMonthEvents.push(event);
+            }
+        });
+
+        // Actualizar contadores
+        document.getElementById('upcoming-count').textContent = upcomingCount;
+        document.getElementById('this-month-count').textContent = thisMonthEvents.length;
+
+        // Populat listas de eventos
+        populateEventList('upcoming-events', upcomingEvents);
+        populateEventList('this-month-events', thisMonthEvents);
+
+        // Agregar click listeners a eventos suscritos que ya están en el HTML
+        attachEventListeners();
+
+        // Agregar listeners a headers collapsibles - INDEPENDIENTES
+        document.querySelectorAll('.summary-section-header').forEach(header => {
+            header.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                const section = this.closest('.summary-section');
+                if (!section) return;
+                
+                const content = section.querySelector('.section-content');
+                const toggle = this.querySelector('.section-toggle');
+                
+                if (!content || !toggle) return;
+                
+                // Verificar estado actual exactamente
+                const currentDisplay = window.getComputedStyle(content).display;
+                const isCurrentlyOpen = currentDisplay !== 'none';
+                
+                // Toggle solo esta sección
+                content.style.display = isCurrentlyOpen ? 'none' : 'block';
+                toggle.textContent = isCurrentlyOpen ? '▶' : '▼';
+            });
+        });
+    });
+
+    function populateEventList(containerId, events) {
+        const container = document.getElementById(containerId);
+        if (!container) return;
+
+        container.innerHTML = '';
+        
+        if (events.length === 0) {
+            container.innerHTML = '<div style="padding: 12px; color: #999; text-align: center;">No hay eventos</div>';
+            return;
+        }
+
+        events.forEach(event => {
+            const eventEl = document.createElement('div');
+            eventEl.className = 'summary-event-item';
+            eventEl.setAttribute('data-event-id', event.id);
+            eventEl.innerHTML = `
+                <div class="event-item-name">${event.name}</div>
+                <div class="event-item-meta">${new Date(event.date).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</div>
+            `;
+            
+            // Agregar click listener para ir al detalle del evento
+            eventEl.addEventListener('click', function() {
+                const eventId = this.getAttribute('data-event-id');
+                window.location.href = `/evento/${eventId}/`;
+            });
+            
+            container.appendChild(eventEl);
+        });
+    }
+
+    function attachEventListeners() {
+        // Agregar click listeners a todos los elementos con clase summary-event-item
+        document.querySelectorAll('.summary-event-item').forEach(eventEl => {
+            eventEl.addEventListener('click', function() {
+                const eventId = this.getAttribute('data-event-id');
+                window.location.href = `/evento/${eventId}/`;
+            });
+        });
+    }
+</script>
+
+{% endblock %}
