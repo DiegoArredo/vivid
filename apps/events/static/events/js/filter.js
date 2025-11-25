@@ -620,11 +620,7 @@ function createEventCardHTML(ev, options = {}) {
                 ${subscribersCountHTML}
                 <p class="event-organizer">de: ${escapedOwner}</p>
                 <div class="event-meta">
-                <span>${LOCATION_ICON_HTML} ${
-                    distancia != null
-                    ? escapeHtml(String(distancia)) + ' M'
-                    : '-- M'
-                }</span>
+                <span>${LOCATION_ICON_HTML} ${distanceText}</span>
                 <span class="event-datetime">Fecha: ${formattedDate}</span>
                 </div>
                 <p class="event-location">${escapedLocation}</p>
