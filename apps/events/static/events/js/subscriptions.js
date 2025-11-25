@@ -117,7 +117,7 @@ function initSubscriptionListeners() {
       console.error('❌ Error de red:', err);
       if (messagesDiv) {
         messagesDiv.innerHTML = `<div class="alert alert-danger">Error de red al procesar la solicitud</div>`;
-        setTimeout(() => messagesDiv.innerHTML = '', 5000);
+        setTimeout(() => messagesDiv.innerHTML = '', 6000);
       }
       // alert('Error de red al procesar la solicitud');
     }
