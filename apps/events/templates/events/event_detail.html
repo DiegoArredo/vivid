@@ -4,6 +4,7 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'events/css/event_detail.css' %}">
+<link rel="stylesheet" href="{% static 'events/css/event.css' %}">
 {% endblock %}
 
 {% block content %}
@@ -123,9 +124,24 @@
             <a href="{% url 'events:event_list' %}" class="btn-back">
                 ⬅ Volver
             </a>
-            <button class="btn-attend">
-                Asistir al evento🚀
-            </button>
+
+            <!-- Boton suscripcion -->
+      {% if user.is_authenticated %}
+      {% if evento.id in subscribed_event_ids %}
+      <button data-subscribeurl="{% url 'events:event_subscribe' %}"
+        data-unsubscribeurl="{% url 'events:event_unsubscribe' %}" data-eventid="{{ evento.id }}"
+        class="attend-btn subscribed">Ya suscrito</button>
+      {% else %}
+      <button data-subscribeurl="{% url 'events:event_subscribe' %}"
+        data-unsubscribeurl="{% url 'events:event_unsubscribe' %}" data-eventid="{{ evento.id }}"
+        class="attend-btn">Suscribirme 🚀</button>
+      {% endif %}
+
+      {% else %}
+      <a href="{% url 'account_login' %}?next={% url 'events:event_list' %}" class="attend-btn">Suscribirme 🚀</a>
+      {% endif %}
+
+
             <button class="btn-share">
                 Compartir
             </button>
@@ -144,6 +160,20 @@
     }
   });
 </script>
+<script src="{% static 'events/js/subscriptions.js' %}"></script>
+<script>
+     document.addEventListener("DOMContentLoaded", () => {
+      console.log('🎯 DOMContentLoaded en event_list.html');
+      
+      // Inicializar listeners de suscripción PRIMERO
+      if (typeof window.initSubscriptionListeners === "function") {
+        console.log('🔧 Inicializando listeners de suscripción desde event_list.html');
+        window.initSubscriptionListeners();
+      }
+    });
+</script>
 {% endif %}
+
+
 {% endblock %}
 
