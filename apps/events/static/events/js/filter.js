@@ -22,15 +22,81 @@ function getCookie(name) {
 const csrftoken = getCookie('csrftoken');
 
 // ===============================
-// Geolocalización
+// Geolocalización + distancias
 // ===============================
+
+let currentUserLocation = null;
+
+/**
+ * Distancia Haversine en metros entre dos puntos lat/lng
+ */
+function distanceInMeters(lat1, lon1, lat2, lon2) {
+    const R = 6371000; // metros
+    const toRad = deg => (deg * Math.PI) / 180;
+
+    const dLat = toRad(lat2 - lat1);
+    const dLon = toRad(lon2 - lon1);
+
+    const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(toRad(lat1)) *
+        Math.cos(toRad(lat2)) *
+        Math.sin(dLon / 2) *
+        Math.sin(dLon / 2);
+
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+}
+
+/**
+ * Formato bonito de la distancia
+ */
+function formatDistance(meters) {
+    if (meters < 1000) {
+        return `${Math.round(meters)} M`;
+    }
+    return `${(meters / 1000).toFixed(1)} KM`;
+}
+
+/**
+ * Recorre las .event-card y actualiza el span [data-distance]
+ * usando la ubicación del usuario
+ */
+function updateEventDistancesForCards(userLat, userLng) {
+    if (typeof userLat !== 'number' || typeof userLng !== 'number') {
+        console.warn('[distance] userLat/userLng inválidos:', userLat, userLng);
+        return;
+    }
+
+    const cards = document.querySelectorAll('.event-card[data-lat][data-lng]');
+    console.log('[distance] Actualizando distancias. Cards encontradas:', cards.length);
+
+    cards.forEach(card => {
+        const lat = parseFloat(card.dataset.lat);
+        const lng = parseFloat(card.dataset.lng);
+
+        if (isNaN(lat) || isNaN(lng)) {
+            console.warn('[distance] Card sin coords válidas, se salta:', card.dataset.id);
+            return;
+        }
+
+        const meters = distanceInMeters(userLat, userLng, lat, lng);
+        const span = card.querySelector('[data-distance]');
+
+        if (span) {
+            span.textContent = formatDistance(meters);
+            card.dataset.distanceMeters = meters.toFixed(0);
+            // console.log('[distance] Distancia card', card.dataset.id, ':', meters, 'm');
+        } else {
+            console.warn('[distance] No hay span [data-distance] en card', card.dataset.id);
+        }
+    });
+}
 
 /**
  * Pide la ubicación del usuario (si no la teníamos) y llama a callback
  * con {lat, lng} o null si falla / deniega permiso.
  */
-let currentUserLocation = null;
-
 function getUserLocation(callback) {
     if (currentUserLocation) {
         callback(currentUserLocation);
@@ -44,26 +110,29 @@ function getUserLocation(callback) {
     }
 
     navigator.geolocation.getCurrentPosition(
-    position => {
-        currentUserLocation = {
-            lat: position.coords.latitude,
-            lng: position.coords.longitude
-        };
-        window.currentUserLocation = currentUserLocation;
-        console.log('[geo] ubicación obtenida:', currentUserLocation);
-        callback(currentUserLocation);
-    },
-    error => {
-        console.warn('No se pudo obtener la ubicación:', error);
-        callback(null);
-    },
-    {
-        enableHighAccuracy: true,
-        timeout: 10000,
-        maximumAge: 0
-    }
-);
+        position => {
+            currentUserLocation = {
+                lat: position.coords.latitude,
+                lng: position.coords.longitude
+            };
+            window.currentUserLocation = currentUserLocation;
+            console.log('[geo] ubicación obtenida:', currentUserLocation);
 
+            // Si ya hay cards en pantalla, intenta actualizar distancias
+            updateEventDistancesForCards(currentUserLocation.lat, currentUserLocation.lng);
+
+            callback(currentUserLocation);
+        },
+        error => {
+            console.warn('No se pudo obtener la ubicación:', error);
+            callback(null);
+        },
+        {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 0
+        }
+    );
 }
 
 // ===============================
@@ -98,54 +167,97 @@ const applyfilter = (filterType, searchValue = null, categoryId = null, userLoca
         },
         body: JSON.stringify(bodyData)
     })
-    .then(response => response.json())
-    .then(data => {
-        console.log("Datos recibidos: " + JSON.stringify(data));
-        try {
-            const eventosList = document.getElementById('eventos-list');
-            if (!eventosList) {
-                console.warn('No se encontró #eventos-list para vaciarlo.');
-                return;
-            }
-
-            // Vaciar contenedor de cards
-            eventosList.innerHTML = '';
-            console.log('El contenedor #eventos-list fue vaciado.');
-
-            // Si la respuesta tiene eventos, crear las cards y añadirlas
-            const events = (data && data.events)
-                ? data.events
-                : (data && data.body && data.body.events ? data.body.events : null);
-
-            if (Array.isArray(events) && events.length > 0) {
-                const fragment = document.createDocumentFragment();
-                events.forEach(ev => {
-                    const wrapper = document.createElement('div');
-                    wrapper.innerHTML = createEventCardHTML(ev).trim();
-                    const card = wrapper.firstChild;
-                    if (card) fragment.appendChild(card);
-                });
-                eventosList.appendChild(fragment);
-
-            // Que el mapa se encargue de los clics en las cards
-                if (typeof window.attachCardClickListeners === 'function') {
-                    window.attachCardClickListeners();
+        .then(response => response.json())
+        .then(data => {
+            console.log("Datos recibidos: " + JSON.stringify(data));
+            try {
+                const eventosList = document.getElementById('eventos-list');
+                if (!eventosList) {
+                    console.warn('No se encontró #eventos-list para vaciarlo.');
+                    return;
                 }
 
-                // Actualizar marcadores del mapa
-                if (typeof window.updateMapMarkers === 'function') {
-                    window.updateMapMarkers();
+                // Vaciar contenedor de cards
+                eventosList.innerHTML = '';
+                console.log('El contenedor #eventos-list fue vaciado.');
+
+                // Si la respuesta tiene eventos, crear las cards y añadirlas
+                const events = (data && data.events)
+                    ? data.events
+                    : (data && data.body && data.body.events ? data.body.events : null);
+
+                if (Array.isArray(events) && events.length > 0) {
+
+                    // 👉 Si el filtro es "cercanos" y tenemos ubicación, ordenamos por distancia
+                    if (filterType === 'cercanos' && currentUserLocation) {
+                        events.sort((a, b) => {
+                            const latA = parseFloat(a.latitud);
+                            const lngA = parseFloat(a.longitud);
+                            const latB = parseFloat(b.latitud);
+                            const lngB = parseFloat(b.longitud);
+
+                            // Si alguna coordenada es inválida, las dejamos al mismo nivel
+                            if (
+                                isNaN(latA) || isNaN(lngA) ||
+                                isNaN(latB) || isNaN(lngB)
+                            ) {
+                                return 0;
+                            }
+
+                            const dA = distanceInMeters(
+                                currentUserLocation.lat,
+                                currentUserLocation.lng,
+                                latA,
+                                lngA
+                            );
+                            const dB = distanceInMeters(
+                                currentUserLocation.lat,
+                                currentUserLocation.lng,
+                                latB,
+                                lngB
+                            );
+
+                            return dA - dB; // menor distancia primero
+                        });
+                    }
+
+                    const fragment = document.createDocumentFragment();
+                    events.forEach(ev => {
+                        const wrapper = document.createElement('div');
+                        wrapper.innerHTML = createEventCardHTML(ev).trim();
+                        const card = wrapper.firstChild;
+                        if (card) fragment.appendChild(card);
+                    });
+                    eventosList.appendChild(fragment);
+
+
+                    // Que el mapa se encargue de los clics en las cards
+                    if (typeof window.attachCardClickListeners === 'function') {
+                        window.attachCardClickListeners();
+                    }
+
+                    // Actualizar marcadores del mapa
+                    if (typeof window.updateMapMarkers === 'function') {
+                        window.updateMapMarkers();
+                    }
+
+                    console.log('Se agregaron', events.length, 'cards al DOM.');
+
+                    // 👉 Actualizar distancias si ya tenemos ubicación del usuario
+                    if (currentUserLocation) {
+                        updateEventDistancesForCards(
+                            currentUserLocation.lat,
+                            currentUserLocation.lng
+                        );
+                    }
+                } else {
+                    console.log('No hay events en la respuesta para renderizar cards.');
                 }
 
-                console.log('Se agregaron', events.length, 'cards al DOM.');
-            } else {
-                console.log('No hay events en la respuesta para renderizar cards.');
+            } catch (err) {
+                console.error('Error vaciando/creando cards en #eventos-list:', err);
             }
-
-        } catch (err) {
-            console.error('Error vaciando/creando cards en #eventos-list:', err);
-        }
-    });
+        });
 };
 
 // ===============================
@@ -171,10 +283,10 @@ const getActiveSearchValue = () => {
 // Listeners de filtros/búsqueda
 // ===============================
 
-document.addEventListener('DOMContentLoaded', function() {
-    const filterButtons  = document.querySelectorAll('.filter-btn');
+document.addEventListener('DOMContentLoaded', function () {
+    const filterButtons = document.querySelectorAll('.filter-btn');
     const categorySelect = document.getElementById('category-select');
-    const searchInput    = document.getElementById('search-input');
+    const searchInput = document.getElementById('search-input');
     const clearSearchBtn = document.querySelector('.clear-search');
 
     // --- Botones de filtro (Todo, Cercanos, Recientes, Populares) ---
@@ -186,8 +298,8 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             button.classList.add('active');
 
-            const filter      = button.dataset.filter;
-            const categoryId  = getActiveCategory();
+            const filter = button.dataset.filter;
+            const categoryId = getActiveCategory();
             const searchValue = getActiveSearchValue();
 
             console.log("Filtro seleccionado:", filter);
@@ -221,13 +333,13 @@ document.addEventListener('DOMContentLoaded', function() {
     // --- Cambio en el select de categorías ---
     if (categorySelect) {
         categorySelect.addEventListener('change', () => {
-            const categoryId  = categorySelect.value;
-            const filter      = getActiveFilter();
+            const categoryId = categorySelect.value;
+            const filter = getActiveFilter();
             const searchValue = getActiveSearchValue();
 
             const filterSection = document.getElementById('filter-section')
-                                   || document.querySelector('.filter-section');
-            const existingPill  = document.querySelector('.filter-pill');
+                || document.querySelector('.filter-section');
+            const existingPill = document.querySelector('.filter-pill');
 
             if (categoryId === "") {
                 existingPill?.remove();
@@ -292,11 +404,11 @@ document.addEventListener('DOMContentLoaded', function() {
     // --- Búsqueda con debounce ---
     let searchTimeout;
     if (searchInput) {
-        searchInput.addEventListener('input', function() {
+        searchInput.addEventListener('input', function () {
             clearTimeout(searchTimeout);
 
             searchTimeout = setTimeout(() => {
-                const filter     = getActiveFilter();
+                const filter = getActiveFilter();
                 const categoryId = getActiveCategory();
                 const searchValue = this.value.trim();
 
@@ -321,7 +433,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (clearSearchBtn && searchInput) {
         clearSearchBtn.addEventListener('click', () => {
             searchInput.value = '';
-            const filter     = getActiveFilter();
+            const filter = getActiveFilter();
             const categoryId = getActiveCategory();
             const searchValue = '';
 
@@ -344,21 +456,21 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Crea el HTML de una card a partir del objeto evento (respuesta del servidor)
 const createEventCardHTML = (ev) => {
-    const id          = ev.id ?? '';
-    const name        = ev.name ?? '';
+    const id = ev.id ?? '';
+    const name = ev.name ?? '';
     const description = ev.description ?? '';
-    const location    = ev.location ?? '';
-    const owner       = ev.owner_username ?? 'Organizador desconocido';
+    const location = ev.location ?? '';
+    const owner = ev.owner_username ?? 'Organizador desconocido';
 
-    const dateObj  = ev.date ? new Date(ev.date) : null;
+    const dateObj = ev.date ? new Date(ev.date) : null;
     const dateText = dateObj
         ? dateObj.toLocaleString('es-CL', {
-              day: '2-digit',
-              month: '2-digit',
-              year: 'numeric',
-              hour: '2-digit',
-              minute: '2-digit'
-          })
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        })
         : '';
 
     const lat = ev.latitud != null ? ev.latitud : '';
@@ -384,41 +496,45 @@ const createEventCardHTML = (ev) => {
 
   <div class="event-image">
     ${
-      photo
-        ? `<img src="${escapeHtml(photo)}" alt="${escapeHtml(name)}">`
-        : `<div class="default-image">
-             <div class="cloud cloud1"></div>
-             <div class="cloud cloud2"></div>
-             <div class="hill"></div>
-           </div>`
-    }
+        photo
+            ? `<img src="${escapeHtml(photo)}" alt="${escapeHtml(name)}">`
+            : `<div class="default-image">
+                 <div class="cloud cloud1"></div>
+                 <div class="cloud cloud2"></div>
+                 <div class="hill"></div>
+               </div>`
+        }
   </div>
 
   <div class="event-details">
 
     <h3 class="event-title">${escapeHtml(name)}</h3>
 
-    <div class="event-meta">
-      <span>📍 ${
-        distancia != null
-          ? escapeHtml(String(distancia)) + ' M'
-          : '-- M'
-      }</span>
-      <span>• ${escapeHtml(dateText)}</span>
-    </div>
+   <div class="event-meta">
+    <span>
+    📍
+    <span class="event-distance" data-distance>
+      ${distancia != null
+            ? escapeHtml(String(distancia)) + ' M'
+            : '-- M'
+        }
+    </span>
+  </span>
+  <span class="event-datetime">• ${escapeHtml(dateText)}</span>
+</div>
 
     <p class="event-location">${escapeHtml(location)}</p>
     <p class="event-organizer">de: ${escapeHtml(owner)}</p>
 
     ${
-      lat !== '' && lng !== ''
-        ? `<div class="event-meta">
-             <span>
-               📍 ${escapeHtml(String(lat))},
-               ${escapeHtml(String(lng))}
-             </span>
-           </div>`
-        : ''
+        lat !== '' && lng !== ''
+            ? `<div class="event-meta">
+                 <span>
+                   📍 ${escapeHtml(String(lat))},
+                   ${escapeHtml(String(lng))}
+                 </span>
+               </div>`
+            : ''
     }
 
     <p class="event-description">
@@ -428,8 +544,8 @@ const createEventCardHTML = (ev) => {
     <div class="event-tags">
       ${
         tags
-          .map(t => `<span class="tag">${escapeHtml(String(t))}</span>`)
-          .join(' ')
+            .map(t => `<span class="tag">${escapeHtml(String(t))}</span>`)
+            .join(' ')
       }
     </div>
 
@@ -453,5 +569,5 @@ const createEventCardHTML = (ev) => {
 
 // Escape básico
 const escapeHtml = (str) => String(str == null ? '' : str)
-    .replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;')
-    .replaceAll('"','&quot;').replaceAll("'","&#039;");
+    .replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;').replaceAll("'", '&#039;');
