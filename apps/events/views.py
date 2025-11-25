@@ -75,50 +75,57 @@ def event_list(request):
 
         elif filter_type == "populares":
             # Ordenar por número de asistentes (popularidad)
-            eventos = eventos.annotate(
-                num_attendees=Count('attendees')
-            ).order_by('-num_attendees')
+            eventos = eventos.annotate(num_attendees=Count("attendees")).order_by(
+                "-num_attendees"
+            )
 
-        elif filter_type == 'cercanos':
+        elif filter_type == "cercanos":
             # Ordenar por cercanía
             # Filtrar eventos con coordenadas
             eventos_con_coords = eventos.filter(
-                latitud__isnull=False,
-                longitud__isnull=False
+                latitud__isnull=False, longitud__isnull=False
             )
-            
+
             # Intentar obtener la ubicación del usuario desde los parámetros
-            user_lat = data.get('userLat')
-            user_lng = data.get('userLng')
-            
+            user_lat = data.get("userLat")
+            user_lng = data.get("userLng")
+
             if user_lat and user_lng:
                 try:
                     user_lat = float(user_lat)
                     user_lng = float(user_lng)
-                    
+
                     # Calcular distancia para cada evento y ordenar
                     eventos_list = list(eventos_con_coords)
                     for evento in eventos_list:
                         if evento.latitud and evento.longitud:
                             # Cálculo simple de distancia usando la fórmula de Haversine
                             lat1, lon1 = math.radians(user_lat), math.radians(user_lng)
-                            lat2, lon2 = math.radians(float(evento.latitud)), math.radians(float(evento.longitud))
-                            
+                            lat2, lon2 = (
+                                math.radians(float(evento.latitud)),
+                                math.radians(float(evento.longitud)),
+                            )
+
                             dlat = lat2 - lat1
                             dlon = lon2 - lon1
-                            
-                            a = math.sin(dlat/2)**2 + math.cos(lat1) * math.cos(lat2) * math.sin(dlon/2)**2
+
+                            a = (
+                                math.sin(dlat / 2) ** 2
+                                + math.cos(lat1)
+                                * math.cos(lat2)
+                                * math.sin(dlon / 2) ** 2
+                            )
                             c = 2 * math.asin(math.sqrt(a))
                             r = 6371  # Radio de la Tierra en kilómetros
-                            
+
                             evento.distance = c * r
                         else:
-                            evento.distance = float('inf')
-                    
+                            evento.distance = float("inf")
+
                     eventos = sorted(eventos_list, key=lambda x: x.distance)
                 except (ValueError, AttributeError, TypeError):
                     # Si hay error, ordenar por fecha
-                    eventos = eventos_con_coords.order_by('-date')
+                    eventos = eventos_con_coords.order_by("-date")
 
         else:
             # Filtro "all" o por defecto
@@ -149,8 +156,8 @@ def event_list(request):
 
         response = {"events": events_data}
         return JsonResponse(response, status=200)
-   
-    #Obtener eventos
+
+    # Obtener eventos
     else:
         eventos = Event.objects.all().select_related("owner", "category")
         # # Obtener todas las categorías para el filtro
@@ -160,18 +167,22 @@ def event_list(request):
 
         # Optimización: obtener ids de eventos a los que el usuario está suscrito
         if request.user.is_authenticated:
-            subscribed_event_ids = list(HasSubs.objects.filter(username=request.user).values_list('name_id', flat=True))
+            subscribed_event_ids = list(
+                HasSubs.objects.filter(username=request.user).values_list(
+                    "name_id", flat=True
+                )
+            )
         else:
             subscribed_event_ids = []
 
         context = {
-            'eventos': eventos,
-            'categorias': categorias,
-            'subscribed_event_ids': subscribed_event_ids,
+            "eventos": eventos,
+            "categorias": categorias,
+            "subscribed_event_ids": subscribed_event_ids,
         }
 
-        return render(request, 'events/event_list.html', context)
-      
+        return render(request, "events/event_list.html", context)
+
 
 # @login_required(login_url='/users/login/')
 def event_create(request):
@@ -194,8 +205,11 @@ def event_create(request):
                     )
 
             ev.save()
+
+            HasSubs.objects.create(username=request.user, name=ev)
+
             messages.success(request, "Evento creado correctamente.")
-            return redirect("events:event_list")
+            return redirect("events:event_detail", event_id=ev.id)
         else:
             messages.error(request, "Revisa el formulario.")
     else:
@@ -211,9 +225,19 @@ def event_detail(request, event_id):
     # Obtener imágenes adicionales del evento (si existen)
     imagenes_adicionales = evento.images.all()
 
+    is_subscribed = False
+    is_owner = False
+    if request.user.is_authenticated:
+        is_subscribed = HasSubs.objects.filter(
+            username=request.user, name=evento
+        ).exists()
+        is_owner = evento.owner == request.user
+
     context = {
         "evento": evento,
         "imagenes_adicionales": imagenes_adicionales,
+        "is_subscribed": is_subscribed,
+        "is_owner": is_owner,
     }
 
     return render(request, "events/event_detail.html", context)
@@ -228,34 +252,44 @@ def subscribe(request):
     Redirige a la página desde la que vino el request (HTTP_REFERER) o a
     la lista de eventos como fallback.
     """
-    if request.method != 'POST':
-        return redirect('events:event_list')
+    if request.method != "POST":
+        return redirect("events:event_list")
     try:
-        data = json.loads(request.body.decode('utf-8'))
+        data = json.loads(request.body.decode("utf-8"))
     except (json.JSONDecodeError, UnicodeDecodeError):
         return JsonResponse({"error": "JSON inválido"}, status=400)
 
-    event_id = data.get('event_id')
+    event_id = data.get("event_id")
     if not event_id:
-        return JsonResponse({'status': 'error', 'message': 'ID de evento faltante.'}, status=400)
+        return JsonResponse(
+            {"status": "error", "message": "ID de evento faltante."}, status=400
+        )
 
     try:
         evento = Event.objects.get(id=int(event_id))
     except (Event.DoesNotExist, ValueError):
-        return JsonResponse({'status': 'error', 'message': 'Evento no encontrado.'}, status=404)
+        return JsonResponse(
+            {"status": "error", "message": "Evento no encontrado."}, status=404
+        )
 
     # Intentar crear la suscripción, respetando la unicidad definida en HasSubs
     sub, created = HasSubs.objects.get_or_create(username=request.user, name=evento)
-    message = f'Te has suscrito a "{evento.name}".' if created else f'Ya estás suscrito a "{evento.name}".'
+    message = (
+        f'Te has suscrito a "{evento.name}".'
+        if created
+        else f'Ya estás suscrito a "{evento.name}".'
+    )
 
     # Si la petición es AJAX, responder JSON para permitir actualización en página
-    return JsonResponse({
-        'status': 'success' if created else 'info',
-        'message': message,
-        'subscribed': True,
-        'event_id': evento.id,
-        'attendees_count': evento.attendees.count(),
-    })
+    return JsonResponse(
+        {
+            "status": "success" if created else "info",
+            "message": message,
+            "subscribed": True,
+            "event_id": evento.id,
+            "attendees_count": evento.attendees.count(),
+        }
+    )
 
 
 @login_required
@@ -264,36 +298,44 @@ def unsubscribe(request):
 
     Responde JSON si la petición es AJAX, o redirect si es una petición normal.
     """
-    if request.method != 'POST':
-        return redirect('events:event_list')
+    if request.method != "POST":
+        return redirect("events:event_list")
     try:
-        data = json.loads(request.body.decode('utf-8'))
+        data = json.loads(request.body.decode("utf-8"))
     except (json.JSONDecodeError, UnicodeDecodeError):
         return JsonResponse({"error": "JSON inválido"}, status=400)
 
-    event_id = data.get('event_id')
+    event_id = data.get("event_id")
     if not event_id:
-        return JsonResponse({'status': 'error', 'message': 'ID de evento faltante.'}, status=400)
+        return JsonResponse(
+            {"status": "error", "message": "ID de evento faltante."}, status=400
+        )
     try:
         evento = Event.objects.get(id=int(event_id))
     except (Event.DoesNotExist, ValueError):
-        return JsonResponse({'status': 'error', 'message': 'Evento no encontrado.'}, status=404)    
-    
+        return JsonResponse(
+            {"status": "error", "message": "Evento no encontrado."}, status=404
+        )
+
     deleted, _ = HasSubs.objects.filter(username=request.user, name=evento).delete()
     if deleted:
         message = f'Te has desuscrito de "{evento.name}".'
     else:
         message = f'No estabas suscrito a "{evento.name}".'
 
-   
-    return JsonResponse({
-        'status': 'success' if deleted else 'info',
-        'message': message,
-        'subscribed': False,
-        'event_id': evento.id,
-        'attendees_count': evento.attendees.count(),
-    })
+    return JsonResponse(
+        {
+            "status": "success" if deleted else "info",
+            "message": message,
+            "subscribed": False,
+            "event_id": evento.id,
+            "attendees_count": evento.attendees.count(),
+        }
+    )
+
 
 # Vista de testeo de mapa
+
+
 def test_view(request):
     return render(request, "events/tests/test_mapa.html")

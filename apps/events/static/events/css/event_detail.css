@@ -260,6 +260,29 @@
     box-shadow: 0 8px 16px rgba(255, 123, 84, 0.3);
 }
 
+/* **NUEVO: Estado suscrito del botón** */
+.btn-attend.subscribed {
+    background: #34d399;
+    box-shadow: 0 4px 12px rgba(52, 211, 153, 0.3);
+}
+
+.btn-attend.subscribed:hover {
+    background: #10b981;
+    box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+}
+
+/* **NUEVO: Estado deshabilitado (organizador)** */
+.btn-attend:disabled {
+    background: #9ca3af;
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+.btn-attend:disabled:hover {
+    transform: none;
+    box-shadow: 0 4px 12px rgba(156, 163, 175, 0.3);
+}
+
 .btn-share {
     background: white;
     color: #333;

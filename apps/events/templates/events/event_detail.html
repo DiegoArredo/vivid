@@ -121,11 +121,42 @@
         <!-- Botones de acción -->
         <div class="detail-actions">
             <a href="{% url 'events:event_list' %}" class="btn-back">
-                ⬅ Volver
+                ⬅️ Volver
             </a>
-            <button class="btn-attend">
-                Asistir al evento🚀
-            </button>
+            
+            <!-- **NUEVO: Lógica de suscripción igual que en event_card.html** -->
+            {% if user.is_authenticated %}
+                {% if is_owner %}
+                    <!-- Si es el organizador, mostrar botón deshabilitado -->
+                    <button class="btn-attend subscribed" disabled title="Eres el organizador de este evento">
+                        Ya suscrito ✓
+                    </button>
+                {% elif is_subscribed %}
+                    <!-- Si está suscrito, mostrar botón para desuscribirse -->
+                    <button 
+                        data-subscribeurl="{% url 'events:event_subscribe' %}"
+                        data-unsubscribeurl="{% url 'events:event_unsubscribe' %}"
+                        data-eventid="{{ evento.id }}"
+                        class="btn-attend subscribed">
+                        Ya suscrito
+                    </button>
+                {% else %}
+                    <!-- Si no está suscrito, mostrar botón para suscribirse -->
+                    <button 
+                        data-subscribeurl="{% url 'events:event_subscribe' %}"
+                        data-unsubscribeurl="{% url 'events:event_unsubscribe' %}"
+                        data-eventid="{{ evento.id }}"
+                        class="btn-attend">
+                        Suscribirme 🚀
+                    </button>
+                {% endif %}
+            {% else %}
+                <!-- Si no está autenticado, redirigir al login -->
+                <a href="{% url 'account_login' %}?next={{ request.path }}" class="btn-attend">
+                    Suscribirme 🚀
+                </a>
+            {% endif %}
+            
             <button class="btn-share">
                 Compartir
             </button>
@@ -145,5 +176,19 @@
   });
 </script>
 {% endif %}
-{% endblock %}
 
+<!-- **NUEVO: Script para manejar suscripciones en vista de detalle** -->
+{% if user.is_authenticated and not is_owner %}
+<script src="{% static 'events/js/subscriptions.js' %}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('🎯 Inicializando listeners de suscripción en detail view');
+    
+    // Reutilizar la función que ya existe en subscriptions.js
+    if (typeof window.initSubscriptionListeners === "function") {
+        window.initSubscriptionListeners();
+    }
+});
+</script>
+{% endif %}
+{% endblock %}
