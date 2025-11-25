@@ -2,8 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.http import HttpResponse, JsonResponse
-from .models import Event
-from .models import Event, HasSubs
+from .models import Event, HasSubs, Category
 from .forms import EventForm
 from .utils import geocode_address
 import json
@@ -126,6 +125,14 @@ def event_list(request):
 
         # Serializar eventos para JSON (asegurando que las fechas sean strings)
         events_data = []
+        # isAuthenticated = false, userId = null, subscribedEventIds = [] 
+        options = {}
+        isAuthenticated = request.user.is_authenticated
+        subscribedEventIds = list(HasSubs.objects.filter(username=request.user).values_list('name_id', flat=True)) if isAuthenticated else []
+        options['isAuthenticated'] = isAuthenticated
+        options['subscribedEventIds'] = subscribedEventIds
+
+
         for ev in eventos:
             events_data.append(
                 {
@@ -144,30 +151,30 @@ def event_list(request):
                     "owner_username": (
                         ev.owner.username if getattr(ev, "owner", None) else None
                     ),
+                    "subscription_count": ev.attendees.count(),
                 }
             )
-
-        response = {"events": events_data}
+        
+        response = {"events": events_data, "options": options}
         return JsonResponse(response, status=200)
    
     #Obtener eventos
     else:
-        eventos = Event.objects.all().select_related("owner", "category")
-        # # Obtener todas las categorías para el filtro
-        from .models import Category
+        # eventos = Event.objects.all().select_related("owner", "category")
+        # # # Obtener todas las categorías para el filtro
+
+
+        # # Optimización: obtener ids de eventos a los que el usuario está suscrito
+        # if request.user.is_authenticated:
+        #     subscribed_event_ids = list(HasSubs.objects.filter(username=request.user).values_list('name_id', flat=True))
+        # else:
+        #     subscribed_event_ids = []
 
         categorias = Category.objects.all()
-
-        # Optimización: obtener ids de eventos a los que el usuario está suscrito
-        if request.user.is_authenticated:
-            subscribed_event_ids = list(HasSubs.objects.filter(username=request.user).values_list('name_id', flat=True))
-        else:
-            subscribed_event_ids = []
-
         context = {
-            'eventos': eventos,
+            # 'eventos': eventos,
             'categorias': categorias,
-            'subscribed_event_ids': subscribed_event_ids,
+            # 'subscribed_event_ids': subscribed_event_ids,
         }
 
         return render(request, 'events/event_list.html', context)
@@ -217,7 +224,8 @@ def event_detail(request, event_id):
 
     # Obtener imágenes adicionales del evento (si existen)
     imagenes_adicionales = evento.images.all()
-
+    isAuthenticated = request.user.is_authenticated
+    subscribedEventIds = list(HasSubs.objects.filter(username=request.user).values_list('name_id', flat=True)) if isAuthenticated else []
     # **NUEVO: Verificar si el usuario está suscrito y si es el owner**
     is_subscribed = False
     is_owner = False
@@ -231,6 +239,8 @@ def event_detail(request, event_id):
     context = {
         "evento": evento,
         "imagenes_adicionales": imagenes_adicionales,
+        "isAuthenticated": isAuthenticated,
+        "subscribed_event_ids": subscribedEventIds,
         "is_subscribed": is_subscribed,
         "is_owner": is_owner,
     }
@@ -273,7 +283,7 @@ def subscribe(request):
         'message': message,
         'subscribed': True,
         'event_id': evento.id,
-        'attendees_count': evento.attendees.count(),
+        'subscription_count': evento.attendees.count(),
     })
 
 
@@ -310,7 +320,7 @@ def unsubscribe(request):
         'message': message,
         'subscribed': False,
         'event_id': evento.id,
-        'attendees_count': evento.attendees.count(),
+        'subscription_count': evento.attendees.count(),
     })
 
 # Vista de testeo de mapa

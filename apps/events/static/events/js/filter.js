@@ -185,7 +185,8 @@ const applyfilter = (filterType, searchValue = null, categoryId = null, userLoca
                 // Vaciar contenedor de cards
                 eventosList.innerHTML = '';
                 console.log('El contenedor #eventos-list fue vaciado.');
-
+                // Si la respuesta tiene opciones:
+                const options = data.options || {};
                 // Si la respuesta tiene eventos, crear las cards y añadirlas
                 const events = (data && data.events)
                     ? data.events
@@ -229,7 +230,7 @@ const applyfilter = (filterType, searchValue = null, categoryId = null, userLoca
                     const fragment = document.createDocumentFragment();
                     events.forEach(ev => {
                         const wrapper = document.createElement('div');
-                        wrapper.innerHTML = createEventCardHTML(ev).trim();
+                        wrapper.innerHTML = createEventCardHTML(ev, options).trim();
                         const card = wrapper.firstChild;
                         if (card) fragment.appendChild(card);
                     });
@@ -255,6 +256,7 @@ const applyfilter = (filterType, searchValue = null, categoryId = null, userLoca
                             currentUserLocation.lng
                         );
                     }
+
                 } else {
                     console.log('No hay events en la respuesta para renderizar cards.');
                 }
@@ -478,122 +480,174 @@ document.addEventListener('DOMContentLoaded', function () {
 // Helpers para crear cards y listeners
 // ===============================
 
-// Crea el HTML de una card a partir del objeto evento (respuesta del servidor)
-const createEventCardHTML = (ev) => {
-    const id = ev.id ?? '';
-    const name = ev.name ?? '';
-    const description = ev.description ?? '';
-    const location = ev.location ?? '';
-    const owner = ev.owner_username ?? 'Organizador desconocido';
-
-    const dateObj = ev.date ? new Date(ev.date) : null;
-    const dateText = dateObj
-        ? dateObj.toLocaleString('es-CL', {
-            day: '2-digit',
-            month: '2-digit',
-            year: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
-        })
-        : '';
-
-    const lat = ev.latitud != null ? ev.latitud : '';
-    const lng = ev.longitud != null ? ev.longitud : '';
-
-    const distancia = ev.distancia != null ? ev.distancia : null;
-
-    const tags = Array.isArray(ev.tags)
-        ? ev.tags
-        : (typeof ev.tags === 'string'
-            ? ev.tags.split(/\s+/).filter(Boolean)
-            : []);
-
-    const photo = ev.photo ?? '';
-
-    return `
-<div class="event-card"
-     data-id="${escapeHtml(id)}"
-     data-lat="${escapeHtml(lat)}"
-     data-lng="${escapeHtml(lng)}"
-     data-location="${escapeHtml(location)}"
-     style="cursor:pointer;">
-
-  <div class="event-image">
-    ${
-        photo
-            ? `<img src="${escapeHtml(photo)}" alt="${escapeHtml(name)}">`
-            : `<div class="default-image">
-                 <div class="cloud cloud1"></div>
-                 <div class="cloud cloud2"></div>
-                 <div class="hill"></div>
-               </div>`
+/**
+ * Crea el HTML de una card de evento (equivalente a event_card.html)
+ * @param {Object} ev - Objeto evento con propiedades del servidor
+ * @param {Object} options - { isAuthenticated, subscribedEventIds }
+ * @returns {string} - HTML de la card
+ */
+function createEventCardHTML(ev, options = {}) {
+    const { isAuthenticated = false, subscribedEventIds = [] } = options;
+    
+    // Escapar valores para evitar XSS
+    const escapedName = escapeHtml(ev.name || 'Sin nombre');
+    const escapedLocation = escapeHtml(ev.location || 'Sin ubicación');
+    const escapedDescription = escapeHtml(ev.description || '');
+    const escapedOwner = escapeHtml(ev.owner_username || 'Organizador');
+    
+    // Formatear fecha (recibida como ISO string del servidor)
+    let formattedDate = '--';
+    if (ev.date) {
+        try {
+            const d = new Date(ev.date);
+            const day = String(d.getDate()).padStart(2, '0');
+            const month = String(d.getMonth() + 1).padStart(2, '0');
+            const year = d.getFullYear();
+            const hours = String(d.getHours()).padStart(2, '0');
+            const minutes = String(d.getMinutes()).padStart(2, '0');
+            formattedDate = `${day}-${month}-${year}, ${hours}:${minutes}`;
+        } catch (e) {
+            console.warn('Error parseando fecha:', ev.date);
         }
-  </div>
-
-  <div class="event-details">
-
-    <h3 class="event-title">${escapeHtml(name)}</h3>
-
-   <div class="event-meta">
-    <span>
-    📍
-    <span class="event-distance" data-distance>
-      ${distancia != null
-            ? escapeHtml(String(distancia)) + ' M'
-            : '-- M'
-        }
-    </span>
-  </span>
-  <span class="event-datetime">• ${escapeHtml(dateText)}</span>
-</div>
-
-    <p class="event-location">${escapeHtml(location)}</p>
-    <p class="event-organizer">de: ${escapeHtml(owner)}</p>
-
-    ${
-        lat !== '' && lng !== ''
-            ? `<div class="event-meta">
-                 <span>
-                   📍 ${escapeHtml(String(lat))},
-                   ${escapeHtml(String(lng))}
-                 </span>
-               </div>`
-            : ''
     }
+    
+    // Coordenadas
+    const lat = ev.latitud ? parseFloat(ev.latitud).toFixed(6) : '';
+    const lng = ev.longitud ? parseFloat(ev.longitud).toFixed(6) : '';
+    
+    // Imagen del evento
+    let imageHTML = '';
+    if (ev.photo_url) {
+        imageHTML = `<img src="${escapeHtml(ev.photo_url)}" alt="${escapedName}">`;
+    } else {
+        imageHTML = `
+            <div class="default-image">
+                <div class="cloud cloud1"></div>
+                <div class="cloud cloud2"></div>
+                <div class="hill"></div>
+            </div>
+        `;
+    }
+    
+    // Distancia (se actualizará después si hay ubicación del usuario)
+    const distanceText = ev.distancia ? `${ev.distancia} M` : '-- M';
+    
+    // Tags
+    let tagsHTML = '';
+    if (ev.tags && ev.tags.length > 0) {
+        const tagsList = Array.isArray(ev.tags) ? ev.tags : ev.tags.split(' ');
+        tagsHTML = tagsList.map(tag => `<span class="tag">${escapeHtml(tag)}</span>`).join('');
+    }
+    
+    // Botón de suscripción
+    let subscribeButtonHTML = '';
+    if (isAuthenticated) {
+        const isSubscribed = subscribedEventIds.includes(ev.id);
+        const btnClass = isSubscribed ? 'attend-btn subscribed' : 'attend-btn';
+        const btnText = isSubscribed ? 'Ya suscrito' : 'Suscribirme 🚀';
+        
+        // URLs hardcoded (ajusta según tu urls.py si es necesario)
+        const subscribeUrl = '/subscribe/';
+        const unsubscribeUrl = '/unsubscribe/';
+        
+        subscribeButtonHTML = `
+            <button 
+                data-subscribeurl="${subscribeUrl}" 
+                data-unsubscribeurl="${unsubscribeUrl}" 
+                data-eventid="${ev.id}"
+                class="${btnClass}"
+            >
+                ${btnText}
+            </button>
+        `;
+    } else {
+        // Usuario no autenticado → link al login
+        const loginUrl = `/accounts/login/`;
+        subscribeButtonHTML = `
+            <a href="${loginUrl}" class="attend-btn">Suscribirme 🚀</a>
+        `;
+    }
+    
+    // Coordenadas visibles (opcional)
+    let coordsHTML = '';
+    if (lat && lng) {
+        coordsHTML = `
+            <div class="event-meta">
+                <span>📍 ${lat}, ${lng}</span>
+            </div>
+        `;
+    }
+    
+    // Truncar descripción a 20 palabras
+    const words = escapedDescription.split(/\s+/);
+    const truncated = words.slice(0, 20).join(' ') + (words.length > 20 ? '...' : '');
+    
+    // cantidad de suscriptores
+    const subscribersCount = ev.subscription_count || 0;
+    const subscribersCountHTML = `
+        
+            <span id="subscribers-count-${ev.id}">👥 ${subscribersCount} suscriptor${subscribersCount !== 1 ? 'es' : ''}</span>
+     
+    `;
 
-    <p class="event-description">
-      ${escapeHtml(description)}
-    </p>
+    // Construir el HTML completo
+    return `
+        <div class="event-card" 
+             data-id="${ev.id}" 
+             data-lat="${lat}" 
+             data-lng="${lng}" 
+             style="cursor:pointer;">
+            
+            <!-- Imagen del evento -->
+            <div class="event-image">
+                ${imageHTML}
+            </div>
+            
+            <!-- Detalles del evento -->
+            <div class="event-details">
+                <h3 class="event-title">${escapedName}</h3>
+                
+                ${subscribersCountHTML}
+                <p class="event-organizer">de: ${escapedOwner}</p>
+                <div class="event-meta">
+                
+                <span class="event-datetime">Fecha: ${formattedDate}</span>
+                </div>
+                <p class="event-location">${escapedLocation}</p>
+                
+                ${coordsHTML}
+                
+                <p class="event-description">${truncated}</p>
+                
+                <!-- Tags -->
+                <div class="event-tags">
+                    ${tagsHTML}
+                </div>
+                
+                <!-- Acciones -->
+                <div class="event-actions" style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+                    ${subscribeButtonHTML}
+                    
+                    <!-- Botón Ver detalles -->
+                    <a href="/evento/${ev.id}/" 
+                       class="details-btn" 
+                       onclick="event.stopPropagation();">
+                        🔍Ver detalles
+                    </a>
+                </div>
+            </div>
+        </div>
+    `;
+}
 
-    <div class="event-tags">
-      ${
-        tags
-            .map(t => `<span class="tag">${escapeHtml(String(t))}</span>`)
-            .join(' ')
-      }
-    </div>
-
-    <div class="event-actions" style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
-      <button class="attend-btn"
-              data-subscribeurl="/subscribe/"
-              data-unsubscribeurl="/unsubscribe/"
-              data-eventid="${escapeHtml(id)}">
-        Suscribirme 🚀
-      </button>
-
-      <!-- Botón Ver detalles -->
-      <a href="/evento/${escapeHtml(id)}/"
-         class="details-btn"
-         onclick="event.stopPropagation();">
-        🔍Ver detalles
-      </a>
-    </div>
-
-  </div>
-</div>`;
-};
-
-// Escape básico
-const escapeHtml = (str) => String(str == null ? '' : str)
-    .replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;')
-    .replaceAll('"', '&quot;').replaceAll("'", '&#039;');
+// Helper para escapar HTML (si no existe ya)
+function escapeHtml(text) {
+    const map = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#039;'
+    };
+    return String(text).replace(/[&<>"']/g, m => map[m]);
+}

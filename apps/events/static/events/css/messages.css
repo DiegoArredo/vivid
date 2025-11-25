@@ -1,12 +1,13 @@
 
 /* Estilos para mensajes de Django */
-.messages {
+#messagesDiv {
     position: fixed;
     top: 100px;
     right: 20px;
     z-index: 9999;
     max-width: 400px;
 }
+
 
 .alert {
     padding: 15px 20px;

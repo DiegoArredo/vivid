@@ -23,6 +23,13 @@ function updateButtonState(button, subscribed) {
   }
 }
 
+function updateSuvscribersCount(eventId, newCount) {
+  const countSpan = document.getElementById(`subscribers-count-${eventId}`);
+  if (countSpan) {
+    countSpan.textContent = `👥 ${newCount} suscriptor${newCount !== 1 ? 'es' : ''}`;
+  }
+}
+
 // Variable para rastrear si ya se inicializó el event delegation
 let subscriptionDelegationInitialized = false;
 
@@ -68,6 +75,13 @@ function initSubscriptionListeners() {
     const currentlySubscribed = button.classList.contains('subscribed');
     const targetUrl = currentlySubscribed ? unsubscribeUrl : subscribeUrl;
     const csrftoken = getCookie('csrftoken');
+    const messagesDiv = document.getElementById('messagesDiv');
+  // Limpiar mensajes previos
+    if (messagesDiv) {
+      messagesDiv.innerHTML = '';
+    }
+    //<div class="alert alert-{{ status }}">{{ message }}</div>
+
     
     console.log(`📤 Haciendo ${currentlySubscribed ? 'UNSUBSCRIBE' : 'SUBSCRIBE'} a:`, targetUrl);
     
@@ -86,21 +100,41 @@ function initSubscriptionListeners() {
       
       if (!res.ok) {
         console.error('❌ Error en la respuesta:', data);
-        alert(data.message || 'Error al procesar la solicitud');
+        messagesDiv.innerHTML = `<div class="alert alert-danger">${data.message || 'Error al procesar la solicitud'}</div>`;
+        setTimeout(() => messagesDiv.innerHTML = '', 5000);
+        // alert(data.message || 'Error al procesar la solicitud');
         return;
       }
       
       // Update button state based on response
       const subscribed = !!data.subscribed;
       updateButtonState(button, subscribed);
+      // Update subscribers count if provided
+      if (data.subscription_count !== undefined) {
+        updateSuvscribersCount(eventId, data.subscription_count);
+      }
+
+      
+
       console.log(`✅ Estado actualizado: ${subscribed ? 'SUSCRITO' : 'NO SUSCRITO'}`);
-      
-      // Mostrar mensaje de éxito
-      alert(data.message || (subscribed ? 'Suscrito exitosamente' : 'Desuscrito exitosamente'));
-      
+      console.log('Nuevo conteo de suscriptores:', data.subscription_count);
+      if (messagesDiv) {
+        if (subscribed) {
+          messagesDiv.innerHTML = `<div class="alert alert-success">${data.message || 'Suscrito exitosamente'}</div>`;
+        } else {
+          messagesDiv.innerHTML = `<div class="alert alert-warning">${data.message || 'Desuscrito exitosamente'}</div>`;
+        // messagesDiv.innerHTML = `<div class="alert alert-success">${data.message || (subscribed ? 'Suscrito exitosamente' : 'Desuscrito exitosamente')}</div>`;
+        }
+        setTimeout(() => messagesDiv.innerHTML = '', 6000);
+      }
+      // alert(data.message || (subscribed ? 'Suscrito exitosamente' : 'Desuscrito exitosamente'));      
     } catch (err) {
       console.error('❌ Error de red:', err);
-      alert('Error de red al procesar la solicitud');
+      if (messagesDiv) {
+        messagesDiv.innerHTML = `<div class="alert alert-danger">Error de red al procesar la solicitud</div>`;
+        setTimeout(() => messagesDiv.innerHTML = '', 6000);
+      }
+      // alert('Error de red al procesar la solicitud');
     }
   });
   
