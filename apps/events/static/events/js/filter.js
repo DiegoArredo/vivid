@@ -98,17 +98,22 @@ function updateEventDistancesForCards(userLat, userLng) {
  * con {lat, lng} o null si falla / deniega permiso.
  */
 function getUserLocation(callback) {
+    // Si ya tenemos la ubicación en caché, usarla directamente
     if (currentUserLocation) {
+        console.log('Usando ubicación en caché:', currentUserLocation);
         callback(currentUserLocation);
         return;
     }
 
     if (!navigator.geolocation) {
-        console.warn('Geolocalización no soportada por el navegador');
+        console.error('❌ Geolocalización no soportada en este navegador');
+        alert('Tu navegador no soporta geolocalización. Por favor, actualiza tu navegador.');
         callback(null);
         return;
     }
 
+    console.log('🔍 Solicitando ubicación al usuario...');
+    
     navigator.geolocation.getCurrentPosition(
         position => {
             currentUserLocation = {
@@ -313,10 +318,23 @@ document.addEventListener('DOMContentLoaded', function () {
             console.log("Valor de búsqueda:", searchValue);
 
             if (filter === 'cercanos') {
+                // Mostrar feedback visual
+                button.innerHTML = '📍 Obteniendo ubicación...';
+                button.disabled = true;
+                
                 getUserLocation((location) => {
+                    // Restaurar botón
+                    button.innerHTML = 'Más Cercanos';
+                    button.disabled = false;
+                    
                     if (!location) {
-                        console.warn('No hay ubicación de usuario, se aplicará filtro "cercanos" sin lat/lng');
-                        applyfilter(filter, searchValue, categoryId, null);
+                        console.warn('No hay ubicación de usuario, mostrando todos los eventos');
+                        alert('No se pudo obtener tu ubicación. Mostrando todos los eventos.');
+                        // Cambiar al filtro "all"
+                        button.classList.remove('active');
+                        const allButton = document.querySelector('.filter-btn[data-filter="all"]');
+                        if (allButton) allButton.classList.add('active');
+                        applyfilter('all', searchValue, categoryId, null);
                         return;
                     }
 
