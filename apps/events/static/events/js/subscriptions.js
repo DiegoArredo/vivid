@@ -23,6 +23,13 @@ function updateButtonState(button, subscribed) {
   }
 }
 
+function updateSuvscribersCount(eventId, newCount) {
+  const countSpan = document.getElementById(`subscribers-count-${eventId}`);
+  if (countSpan) {
+    countSpan.textContent = `👥 ${newCount} suscriptor${newCount !== 1 ? 'es' : ''}`;
+  }
+}
+
 // Variable para rastrear si ya se inicializó el event delegation
 let subscriptionDelegationInitialized = false;
 
@@ -102,7 +109,15 @@ function initSubscriptionListeners() {
       // Update button state based on response
       const subscribed = !!data.subscribed;
       updateButtonState(button, subscribed);
+      // Update subscribers count if provided
+      if (data.subscription_count !== undefined) {
+        updateSuvscribersCount(eventId, data.subscription_count);
+      }
+
+      
+
       console.log(`✅ Estado actualizado: ${subscribed ? 'SUSCRITO' : 'NO SUSCRITO'}`);
+      console.log('Nuevo conteo de suscriptores:', data.subscription_count);
       if (messagesDiv) {
         if (subscribed) {
           messagesDiv.innerHTML = `<div class="alert alert-success">${data.message || 'Suscrito exitosamente'}</div>`;
