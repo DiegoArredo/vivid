@@ -582,6 +582,14 @@ function createEventCardHTML(ev, options = {}) {
     const words = escapedDescription.split(/\s+/);
     const truncated = words.slice(0, 20).join(' ') + (words.length > 20 ? '...' : '');
     
+    // cantidad de suscriptores
+    const subscribersCount = ev.subscription_count || 0;
+    const subscribersCountHTML = `
+        
+            <span id="subscribers-count-${ev.id}">👥 ${subscribersCount} suscriptor${subscribersCount !== 1 ? 'es' : ''}</span>
+     
+    `;
+
     // Construir el HTML completo
     return `
         <div class="event-card" 
@@ -599,7 +607,7 @@ function createEventCardHTML(ev, options = {}) {
             <div class="event-details">
                 <h3 class="event-title">${escapedName}</h3>
                 
-                
+                ${subscribersCountHTML}
                 <p class="event-organizer">de: ${escapedOwner}</p>
                 <div class="event-meta">
                 
