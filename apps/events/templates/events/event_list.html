@@ -54,7 +54,7 @@
         </div>
         {% endif %}
 
-    <!-- Lista de eventos -->
+    Lista de eventos
     <div id="eventos-list">
       {% for evento in eventos %}
         {% include 'events/components/event_card.html' with evento=evento %}
@@ -129,7 +129,10 @@
         const href = e.currentTarget.dataset.href;
         if (href) window.location.href = href;
       });
+
+      applyfilter('all', '', null, null);
     });
+
   </script>
 {% endblock %}
 
