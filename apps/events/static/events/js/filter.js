@@ -599,18 +599,13 @@ function createEventCardHTML(ev, options = {}) {
             <div class="event-details">
                 <h3 class="event-title">${escapedName}</h3>
                 
-                <div class="event-meta">
-                    <span>
-                        📍
-                        <span class="event-distance" data-distance>
-                            ${distanceText}
-                        </span>
-                    </span>
-                    <span class="event-datetime">• ${formattedDate}</span>
-                </div>
                 
-                <p class="event-location">${escapedLocation}</p>
                 <p class="event-organizer">de: ${escapedOwner}</p>
+                <div class="event-meta">
+                
+                <span class="event-datetime">Fecha: ${formattedDate}</span>
+                </div>
+                <p class="event-location">${escapedLocation}</p>
                 
                 ${coordsHTML}
                 
@@ -626,7 +621,7 @@ function createEventCardHTML(ev, options = {}) {
                     ${subscribeButtonHTML}
                     
                     <!-- Botón Ver detalles -->
-                    <a href="/events/${ev.id}/" 
+                    <a href="/evento/${ev.id}/" 
                        class="details-btn" 
                        onclick="event.stopPropagation();">
                         🔍Ver detalles
