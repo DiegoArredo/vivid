@@ -9,8 +9,9 @@
     display: flex;
     gap: 20px;
     box-shadow: var(--shadow-sm);
-    transition: transform 0.3s, box-shadow 0.3s;
+    transition: transform 0.3s, box-shadow 0.3s, border 0.3s;
     cursor: pointer;
+    border: 2px solid transparent;
 }
 
 .event-card:hover {
@@ -18,11 +19,31 @@
     box-shadow: var(--shadow-md);
 }
 
+.event-card:focus {
+    outline: none;
+    border: 2px solid var(--primary-hover);
+    box-shadow: var(--shadow-md);
+}
+
+.event-card:active {
+    outline: none;
+    border: 2px solid var(--primary-hover);
+}
+
 .event-card.highlighted {
     background: #fff3e0;
     border: 2px solid var(--primary-color);
     transform: scale(1.02);
 }
+
+/* Ajustar el tamaño del icono de ubicación */
+.location-icon {
+    width: 18px; 
+    height: 18px;
+    vertical-align: middle; 
+    margin-right: 6px;
+}
+
 
 /* =========================================
    IMAGEN DEL EVENTO
@@ -183,21 +204,28 @@
    BOTONES
 ========================================= */
 
-/* Botón asistir (ya existente) */
+/* Botón asistir*/
 .attend-btn {
     background: var(--primary-color);
     color: var(--white);
     border: none;
-    padding: 12px 30px;
+    padding: 10px 24px;
     border-radius: 25px;
     cursor: pointer;
     font-weight: 600;
     display: inline-flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
     transition: background 0.3s, transform 0.2s;
     align-self: flex-start;
     font-size: 14px;
+}
+
+.attend-btn .btn-icon {
+    width: 18px;
+    height: 18px;
+    display: block;
+    filter: brightness(0) invert(1); /* Hace el SVG blanco */
 }
 
 .attend-btn:hover {
@@ -209,26 +237,33 @@
     transform: translateY(0);
 }
 
-/* Botón "Ver detalles" – EXACTAMENTE igual a attend-btn, pero celeste */
+/* Botón Ver Detalles*/
 .details-btn {
-    background: #3ba7ff;  /* CELESTE */
+    background: #2d9cc8;
     color: var(--white);
     border: none;
-    padding: 12px 30px;
+    padding: 10px 24px;
     border-radius: 25px;
     cursor: pointer;
     font-weight: 600;
     display: inline-flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
     transition: background 0.3s, transform 0.2s;
     align-self: flex-start;
     font-size: 14px;
     text-decoration: none !important;
 }
 
+.details-btn .btn-icon {
+    width: 18px;
+    height: 18px;
+    display: block;
+    filter: brightness(0) invert(1); /* Hace el SVG blanco */
+}
+
 .details-btn:hover {
-    background: #1d94fa;
+    background: #1e6a8a;
     transform: translateY(-2px);
 }
 
@@ -244,6 +279,24 @@
     text-decoration: none !important;
     color: var(--white) !important;
 }
+
+/* Ajustar tamaño en móvil */
+@media (max-width: 768px) {
+    .attend-btn,
+    .details-btn {
+        padding: 8px 20px;
+        font-size: 13px;
+    }
+    
+    .attend-btn .btn-icon,
+    .details-btn .btn-icon {
+        width: 14px;
+        height: 14px;
+    }
+}
+
+
+
 
 /* =========================================
    RESPONSIVE
@@ -270,7 +323,7 @@
 }
 
 /* =========================================
-   CARDS COMO LINKS (si usas event-card-link en otro contexto)
+   CARDS COMO LINKS
 ========================================= */
 
 a.event-card-link {

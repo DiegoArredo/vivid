@@ -342,6 +342,12 @@ document.addEventListener('DOMContentLoaded', function() {
 // Helpers para crear cards y listeners
 // ===============================
 
+// Define el HTML para el icono de ubicación usando la misma ruta que en event-card.html
+const LOCATION_ICON_HTML = `
+  <img src="/static/events/images/icons/location-icon.svg" alt="Ubicación" class="location-icon">
+`;
+
+
 // Crea el HTML de una card a partir del objeto evento (respuesta del servidor)
 const createEventCardHTML = (ev) => {
     const id          = ev.id ?? '';
@@ -399,7 +405,7 @@ const createEventCardHTML = (ev) => {
     <h3 class="event-title">${escapeHtml(name)}</h3>
 
     <div class="event-meta">
-      <span>📍 ${
+      <span>${LOCATION_ICON_HTML} ${
         distancia != null
           ? escapeHtml(String(distancia)) + ' M'
           : '-- M'
@@ -414,10 +420,10 @@ const createEventCardHTML = (ev) => {
       lat !== '' && lng !== ''
         ? `<div class="event-meta">
              <span>
-               📍 ${escapeHtml(String(lat))},
+               ${LOCATION_ICON_HTML} ${escapeHtml(String(lat))},
                ${escapeHtml(String(lng))}
              </span>
-           </div>`
+            </div>`
         : ''
     }
 
@@ -434,17 +440,19 @@ const createEventCardHTML = (ev) => {
     </div>
 
     <div class="event-actions" style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
-      <button class="attend-btn"
-              onclick="event.stopPropagation(); alert('Funcionalidad de asistir próximamente');">
-        Asistir 🚀
-      </button>
+    <button class="attend-btn"
+            onclick="event.stopPropagation(); alert('Funcionalidad de asistir próximamente');">
+        <img src="/static/events/images/icons/assist-rocket.svg" alt="" class="btn-icon">
+        <span>Asistir</span>
+    </button>
 
-      <!-- Botón Ver detalles -->
-      <a href="/evento/${escapeHtml(id)}/"
-         class="details-btn"
-         onclick="event.stopPropagation();">
-        🔍Ver detalles
-      </a>
+    <!-- Botón Ver detalles -->
+    <a href="/evento/${escapeHtml(id)}/"
+        class="details-btn"
+        onclick="event.stopPropagation();">
+        <img src="/static/events/images/icons/info-icon.svg" alt="" class="btn-icon">
+        <span>Ver detalles</span>
+    </a>
     </div>
 
   </div>
