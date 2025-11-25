@@ -320,7 +320,6 @@ window.centerMapOnUserLocation = function (location) {
 // Mapa de detalle de un solo evento
 window.initEventDetailMap = function () {
   console.log("[map] initEventDetailMap");
-  console.log("🧩 NUEVO POPUP EN initEventDetailMap");
 
   if (typeof maplibregl === "undefined") {
     console.error("[map] MapLibre no está cargado");
@@ -344,12 +343,78 @@ window.initEventDetailMap = function () {
     return;
   }
 
-  window.vividMap = new maplibregl.Map({
+  const detailMap = new maplibregl.Map({
     container: "detail-map",
     style: STYLE_URL,
     center: [lng, lat],
     zoom: 15,
   });
 
-  window.vividMap.addControl(new maplibregl.NavigationControl(), "top-right");
+  detailMap.addControl(new maplibregl.NavigationControl(), "top-right");
+
+  // ✅ CRÍTICO: Crear el marcador del evento
+  detailMap.on("load", () => {
+    console.log("[map] Mapa de detalle cargado, agregando marcador");
+    
+    // Crear marcador con popup estilizado
+    new maplibregl.Marker({ color: "#ff7a00" })
+      .setLngLat([lng, lat])
+      .setPopup(
+        new maplibregl.Popup({ offset: 25 }).setHTML(`
+          <div style="
+            padding:10px;
+            max-width:260px;
+            font-family:'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+            background:#e0f2ff;
+            border-radius:8px;
+            box-shadow:0 2px 6px rgba(0,0,0,0.15);
+          ">
+            <h4 style="
+              margin:0 0 4px 0;
+              font-size:15px;
+              font-weight:600;
+              color:#111827;
+            ">
+              ${window.escapeHtml(name)}
+            </h4>
+
+            ${
+              location
+                ? `<div style="
+                     margin:0 0 4px 0;
+                     font-size:13px;
+                     color:#4b5563;
+                   ">
+                     📍 ${window.escapeHtml(location)}
+                   </div>`
+                : ""
+            }
+
+            ${
+              datetime
+                ? `<div style="
+                     margin:0 0 6px 0;
+                     font-size:13px;
+                     font-weight:500;
+                     color:#374151;
+                   ">
+                     🕒 ${window.escapeHtml(datetime)}
+                   </div>`
+                : ""
+            }
+
+            <div style="
+              margin-top:2px;
+              font-size:11px;
+              color:#6b7280;
+            ">
+              (${lat.toFixed(6)}, ${lng.toFixed(6)})
+            </div>
+          </div>
+        `)
+      )
+      .addTo(detailMap);
+      
+    console.log(`[map] ✅ Marcador agregado en [${lng}, ${lat}]`);
+  });
 }
