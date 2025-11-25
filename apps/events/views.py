@@ -132,6 +132,7 @@ def event_list(request):
         options['isAuthenticated'] = isAuthenticated
         options['subscribedEventIds'] = subscribedEventIds
 
+
         for ev in eventos:
             events_data.append(
                 {
@@ -150,6 +151,7 @@ def event_list(request):
                     "owner_username": (
                         ev.owner.username if getattr(ev, "owner", None) else None
                     ),
+                    "subscription_count": ev.attendees.count(),
                 }
             )
         
@@ -215,10 +217,13 @@ def event_detail(request, event_id):
 
     # Obtener imágenes adicionales del evento (si existen)
     imagenes_adicionales = evento.images.all()
-
+    isAuthenticated = request.user.is_authenticated
+    subscribedEventIds = list(HasSubs.objects.filter(username=request.user).values_list('name_id', flat=True)) if isAuthenticated else []
     context = {
         "evento": evento,
         "imagenes_adicionales": imagenes_adicionales,
+        "isAuthenticated": isAuthenticated,
+        "subscribed_event_ids": subscribedEventIds,
     }
 
     return render(request, "events/event_detail.html", context)
