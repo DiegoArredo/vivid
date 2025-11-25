@@ -194,8 +194,15 @@ def event_create(request):
                     )
 
             ev.save()
+            
+            # **NUEVO: Suscribir automáticamente al creador del evento**
+            HasSubs.objects.create(
+                username=request.user,
+                name=ev
+            )
+            
             messages.success(request, "Evento creado correctamente.")
-            return redirect("events:event_list")
+            return redirect("events:event_detail", event_id=ev.id)
         else:
             messages.error(request, "Revisa el formulario.")
     else:
@@ -211,9 +218,21 @@ def event_detail(request, event_id):
     # Obtener imágenes adicionales del evento (si existen)
     imagenes_adicionales = evento.images.all()
 
+    # **NUEVO: Verificar si el usuario está suscrito y si es el owner**
+    is_subscribed = False
+    is_owner = False
+    if request.user.is_authenticated:
+        is_subscribed = HasSubs.objects.filter(
+            username=request.user,
+            name=evento
+        ).exists()
+        is_owner = evento.owner == request.user
+
     context = {
         "evento": evento,
         "imagenes_adicionales": imagenes_adicionales,
+        "is_subscribed": is_subscribed,
+        "is_owner": is_owner,
     }
 
     return render(request, "events/event_detail.html", context)
