@@ -279,7 +279,7 @@
 }
 
 .attend-btn:hover {
-    background: var(--primary-hover);
+    background: #1e6a8a;
     transform: translateY(-2px);
 }
 

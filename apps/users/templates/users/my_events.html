@@ -8,8 +8,14 @@
 
 {% block content %}
 <div class="my-events-container">
-  <h1 class="page-title">Mis Eventos</h1>
-  <p class="page-subtitle">Gestiona los eventos que has creado y revisa los eventos a los que estás suscrito</p>
+  <div class="my-events-header">
+    <div class="my-events-title-group">
+      <h1 class="calendar-title">
+        <img src="{% static 'events/images/icons/event-icon.svg' %}" alt="Eventos" class="calendar-title-icon"> Mis Eventos
+      </h1>
+      <p class="page-subtitle">Gestiona los eventos que has creado y revisa los eventos a los que estás suscrito</p>
+    </div>
+  </div>
 
   <div class="events-grid">
     <!-- Eventos Creados -->
@@ -47,7 +53,7 @@
               </div>
 
               <div class="event-meta">
-                <span class="event-datetime">📅 {{ evento.date|date:"d/m/Y - H:i" }}</span>
+                <span class="event-datetime"><img src="{% static 'events/images/icons/calendar-icon.svg' %}" alt="Fecha" class="calendar-icon"> {{ evento.date|date:"d/m/Y - H:i" }}</span>
               </div>
 
               <p class="event-description">
@@ -117,7 +123,7 @@
               </div>
 
               <div class="event-meta">
-                <span class="event-datetime">📅 {{ evento.date|date:"d/m/Y - H:i" }}</span>
+                <span class="event-datetime"><img src="{% static 'events/images/icons/calendar-icon.svg' %}" alt="Fecha" class="calendar-icon"> {{ evento.date|date:"d/m/Y - H:i" }}</span>
               </div>
 
               <p class="event-organizer">Organizado por: {{ evento.owner.username }}</p>

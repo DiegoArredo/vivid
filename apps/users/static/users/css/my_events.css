@@ -1,3 +1,65 @@
+      /* Forzar alineación a la izquierda para el header de Mis Eventos */
+      .my-events-header,
+      .my-events-title-group,
+      .my-events-title-group .calendar-title,
+      .my-events-title-group .page-subtitle,
+      .calendar-title-icon {
+        margin-left: 0 !important;
+        padding-left: 0 !important;
+        text-align: left !important;
+      }
+      .my-events-title-group {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        margin-left: 0;
+      }
+
+      .my-events-title-group .calendar-title {
+        margin-bottom: 4px;
+      }
+
+      .my-events-title-group .page-subtitle {
+        margin-left: 0;
+        margin-top: 0;
+        text-align: left;
+      }
+    .my-events-header {
+      text-align: left;
+      margin-bottom: 30px;
+      margin-left: 0;
+      max-width: 700px;
+    }
+
+    .my-events-header .calendar-title {
+      margin-bottom: 4px;
+    }
+
+    .my-events-header .page-subtitle {
+      margin-left: 36px;
+      margin-top: 0;
+      text-align: left;
+    }
+  /* Estilos para el título igual que en calendar.css */
+  .calendar-title {
+    font-size: 26px;
+    font-weight: 700;
+    color: #333;
+    margin: 0;
+    flex-shrink: 0;
+    text-align: left;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+
+  .calendar-title-icon {
+    width: 28px;
+    height: 28px;
+    vertical-align: middle;
+    margin-right: 8px;
+  }
 
   .my-events-container {
     max-width: 1400px;
@@ -24,7 +86,7 @@
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
     gap: 30px;
-    margin-top: 30px;
+    margin-top: 0;
   }
 
   .events-column {
@@ -104,7 +166,7 @@
   }
 
   .event-card .details-btn:hover {
-    background: #0d9488;
+    background: #1e6a8a;
   }
 
   .event-card .details-btn .btn-icon {

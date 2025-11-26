@@ -126,7 +126,7 @@
                 {% for event in created_events %}
                     <div class="event-card-wrapper">
                         <a href="{% url 'event_detail' event.id %}" class="event-card-link">
-                            {% include 'events/components/event_card.html' with event=event show_edit=True %}
+                            {% include 'events/components/event_card.html' with evento=event show_edit=True %}
                         </a>
                     </div>
                 {% endfor %}
@@ -161,7 +161,7 @@
                 {% for event in subscribed_events %}
                     <div class="event-card-wrapper">
                         <a href="{% url 'event_detail' event.id %}" class="event-card-link">
-                            {% include 'events/components/event_card.html' with event=event %}
+                            {% include 'events/components/event_card.html' with evento=event %}
                         </a>
                     </div>
                 {% endfor %}
