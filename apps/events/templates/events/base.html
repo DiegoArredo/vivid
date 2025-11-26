@@ -48,6 +48,7 @@
       </a>
     </div>
     <nav class="nav-menu">
+
       <a href="{% url 'events:event_list' %}">Eventos</a>
 
       {% if user.is_authenticated %}
@@ -81,6 +82,7 @@
 
   <!-- Contenido principal -->
   {% block content %}{% endblock %}
+
 
   <!-- Auto-ocultar mensajes después de 5 segundos -->
   <script>
