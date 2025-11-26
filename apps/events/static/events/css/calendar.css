@@ -1,3 +1,16 @@
+/* Icono de calendario en título y estado vacío */
+.calendar-title-icon {
+    width: 28px;
+    height: 28px;
+    vertical-align: middle;
+    margin-right: 8px;
+}
+.calendar-empty-icon {
+    width: 48px;
+    height: 48px;
+    display: block;
+    margin: 0 auto 12px auto;
+}
 /* Estilos para el calendario interactivo */
 
 .calendar-container {

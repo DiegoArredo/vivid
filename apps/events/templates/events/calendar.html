@@ -11,7 +11,9 @@
 <div class="calendar-container">
     <!-- Encabezado -->
     <div class="calendar-header">
-        <h1 class="calendar-title">📅 Mi Calendario</h1>
+                <h1 class="calendar-title">
+                    <img src="{% static 'events/images/icons/calendar-icon.svg' %}" alt="Calendario" class="calendar-title-icon"> Mi Calendario
+                </h1>
     </div>
 
     {% if eventos_suscritos %}
@@ -107,7 +109,9 @@
     {% else %}
     <!-- Estado vacío -->
     <div class="empty-state">
-        <div class="empty-state-icon">📅</div>
+        <div class="empty-state-icon">
+          <img src="{% static 'events/images/icons/calendar-icon.svg' %}" alt="Calendario" class="calendar-empty-icon">
+        </div>
         <h2 class="empty-state-title">No tienes eventos suscritos</h2>
         <p class="empty-state-text">Suscríbete a eventos para verlos en tu calendario personal</p>
         <a href="{% url 'events:event_list' %}" class="empty-state-button">Explorar Eventos</a>
