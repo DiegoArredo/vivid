@@ -10,5 +10,6 @@ urlpatterns = [
     path('subscribe/', views.subscribe, name='event_subscribe'),
     path('unsubscribe/', views.unsubscribe, name='event_unsubscribe'),
     path('calendario/', views.calendar_view, name='calendar'),
+    path('about/', views.about, name='about'),
     path('test/', views.test_view, name='test'),
 ]

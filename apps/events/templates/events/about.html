@@ -1,0 +1,47 @@
+{% extends 'events/base.html' %}
+{% load static %}
+
+{% block content %}
+<link rel="stylesheet" href="{% static 'events/css/about.css' %}">
+<div class="about-container">
+    <div class="about-header">
+        <img src="{% static 'events/images/vivid-logo.svg' %}" alt="Vivid Logo" class="about-logo" style="filter: invert(48%) sepia(97%) saturate(749%) hue-rotate(359deg) brightness(101%) contrast(104%);">
+        <h1>Sobre nosotros</h1>
+    </div>
+    <div class="about-section">
+        <h2>Nuestra motivación</h2>
+        <p>
+            En Vivid creemos que la tecnología debe ser un puente, no un destino. Nuestra plataforma nace como respuesta a la saturación de aplicaciones que priorizan la retención y la interacción virtual por sobre la conexión humana real. Queremos reconectar a las personas con su entorno físico y social, facilitando el descubrimiento de experiencias presenciales que enriquezcan la vida comunitaria.
+        </p>
+    </div>
+    <div class="about-section">
+        <h2>¿Qué nos inspira?</h2>
+        <ul>
+            <li><strong>Uber / Booking.com:</strong> Mapas interactivos para descubrir lo que ocurre cerca de ti.</li>
+            <li><strong>Meetup / Eventbrite:</strong> Organización y descubrimiento de eventos, pero con foco en lo local y lo simple.</li>
+        </ul>
+        <p>
+            Nuestro diferenciador es la simplicidad, la ubicación y la vida presencial. No buscamos retenerte en la pantalla, sino motivarte a vivir experiencias reales.
+        </p>
+    </div>
+    <div class="about-section">
+        <h2>Oportunidad</h2>
+        <p>
+            Las plataformas sociales actuales dificultan la conexión presencial significativa. Vivid surge para democratizar la organización de actividades y visibilizar eventos cercanos, con un diseño centrado en la usabilidad, eficiencia y simplicidad. Queremos acompañarte en el descubrimiento y participación de experiencias presenciales.
+        </p>
+    </div>
+    <div class="about-section">
+        <h2>¿Qué puedes hacer en Vivid?</h2>
+        <ul>
+            <li>Crear y descubrir eventos en un mapa interactivo.</li>
+            <li>Visualizar eventos cercanos a tu ubicación.</li>
+            <li>Suscribirte a eventos para recordarlos fácilmente.</li>
+            <li>Ver cuántos interesados hay en cada evento.</li>
+        </ul>
+    </div>
+    <div class="about-section about-contact">
+        <h2>Contacto</h2>
+        <p>¿Tienes dudas, sugerencias o quieres colaborar? Escríbenos a <a href="mailto:contacto@vividapp.cl">contacto@vividapp.cl</a></p>
+    </div>
+</div>
+{% endblock %}

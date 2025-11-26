@@ -1,0 +1,55 @@
+/* Estilos para la vista Sobre nosotros */
+.about-container {
+    max-width: 700px;
+    margin: 40px auto 60px auto;
+    background: #fff;
+    border-radius: 18px;
+    box-shadow: 0 2px 16px rgba(0,0,0,0.07);
+    padding: 32px 28px 24px 28px;
+    font-family: 'Segoe UI', 'Arial', sans-serif;
+}
+.about-header {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    margin-bottom: 18px;
+}
+.about-logo {
+    width: 80px;
+    height: 80px;
+}
+.about-header h1 {
+    font-size: 2.2rem;
+    color: #ff7a00;
+    margin: 0;
+    font-weight: 700;
+}
+.about-section {
+    margin-bottom: 22px;
+}
+.about-section h2 {
+    font-size: 1.2rem;
+    color: #222;
+    margin-bottom: 7px;
+    font-weight: 600;
+}
+.about-section p, .about-section ul {
+    color: #444;
+    font-size: 1rem;
+    margin: 0 0 7px 0;
+}
+.about-section ul {
+    padding-left: 22px;
+    margin-bottom: 7px;
+}
+.about-section li {
+    margin-bottom: 3px;
+}
+.about-contact a {
+    color: #ff7a00;
+    text-decoration: underline;
+    font-weight: 500;
+}
+.about-contact a:hover {
+    color: #d65c00;
+}
