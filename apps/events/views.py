@@ -143,6 +143,7 @@ def event_list(request):
                     "date": ev.date.isoformat() if getattr(ev, "date", None) else None,
                     "latitud": str(ev.latitud) if ev.latitud else None,
                     "longitud": str(ev.longitud) if ev.longitud else None,
+                    "distancia": int(getattr(ev, "distance", None)) if getattr(ev, "distance", None) is not None else None,
                     "category_id": ev.category_id,
                     "category_name": (
                         ev.category.category if getattr(ev, "category", None) else None
@@ -244,6 +245,7 @@ def event_detail(request, event_id):
         "subscribed_event_ids": subscribedEventIds,
         "is_subscribed": is_subscribed,
         "is_owner": is_owner,
+        "subscriber_count": evento.attendees.count(),
     }
 
     return render(request, "events/event_detail.html", context)

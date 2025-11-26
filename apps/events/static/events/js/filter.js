@@ -539,7 +539,7 @@ function createEventCardHTML(ev, options = {}) {
     }
     
     // Distancia (se actualizará después si hay ubicación del usuario)
-    const distanceText = ev.distancia ? `${ev.distancia} M` : '-- M';
+    const distanceText = ev.distancia ? `Distancia: ${ev.distancia} KM` : 'Distancia: Sin ubicación actual';
     
     // Tags
     let tagsHTML = '';
