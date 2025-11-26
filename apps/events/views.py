@@ -1,5 +1,3 @@
-def about(request):
-    return render(request, 'events/about.html')
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
@@ -11,20 +9,38 @@ import json
 import math
 from django.db.models import Q, Count
 
-# Vista de testeo css y estilos de home
-# def test_view(request):
-#    return render(request, 'events/test.html')
-
-# Vista de testeo de navbar
-# def test_view(request):
-#    return render(request, 'events/test_navbar.html')
-
-# Vista de testeo de event card
-# def test_view(request):
-#    return render(request, 'events/test_card.html')
-
-
 def event_list(request):
+    """
+    Vista principal para listar y filtrar eventos.
+    
+    Maneja dos tipos de peticiones:
+    - GET: Renderiza la página de lista de eventos con todas las categorías.
+    - POST: Procesa filtros y búsquedas, devolviendo eventos en formato JSON.
+    
+    Filtros disponibles (POST):
+        - searchValue: Búsqueda de texto en nombre, descripción, ubicación y tags.
+        - categoryId: Filtrado por categoría específica.
+        - filterType: Tipo de ordenamiento aplicado:
+            * 'recientes': Ordena por fecha más próxima.
+            * 'populares': Ordena por número de asistentes (mayor a menor).
+            * 'cercanos': Ordena por distancia geográfica desde la ubicación del usuario.
+                         Requiere userLat y userLng en la petición.
+            * 'all' o default: Sin ordenamiento especial.
+    
+    Parámetros POST esperados:
+        filterType (str): Tipo de filtro ('recientes', 'populares', 'cercanos', 'all').
+        searchValue (str, opcional): Texto de búsqueda.
+        categoryId (int, opcional): ID de la categoría para filtrar.
+        userLat (float, opcional): Latitud del usuario (para filtro 'cercanos').
+        userLng (float, opcional): Longitud del usuario (para filtro 'cercanos').
+    
+    Returns:
+        GET: Renderiza 'events/event_list.html' con el contexto de categorías.
+        POST: JsonResponse con:
+            - events: Lista de eventos serializados con toda su información.
+            - options: Información del usuario (isAuthenticated, subscribedEventIds).
+    """
+
     if request.method == "POST":
         try:
             data = json.loads(request.body.decode("utf-8"))
@@ -43,11 +59,6 @@ def event_list(request):
             category_id = int(category_id) if category_id is not None else None
         except (ValueError, TypeError):
             category_id = None
-
-        # DEbug
-        print("filter_type:", filter_type)
-        print("search_value:", search_value)
-        print("category_id:", category_id)
 
         # Obtener parámetros de filtrado
         # Query base
@@ -164,28 +175,40 @@ def event_list(request):
    
     #Obtener eventos
     else:
-        # eventos = Event.objects.all().select_related("owner", "category")
-        # # # Obtener todas las categorías para el filtro
-
-
-        # # Optimización: obtener ids de eventos a los que el usuario está suscrito
-        # if request.user.is_authenticated:
-        #     subscribed_event_ids = list(HasSubs.objects.filter(username=request.user).values_list('name_id', flat=True))
-        # else:
-        #     subscribed_event_ids = []
 
         categorias = Category.objects.all()
-        context = {
-            # 'eventos': eventos,
+        context = {        
             'categorias': categorias,
-            # 'subscribed_event_ids': subscribed_event_ids,
         }
 
         return render(request, 'events/event_list.html', context)
       
 
-# @login_required(login_url='/users/login/')
+@login_required(login_url='/users/login/')
 def event_create(request):
+    """
+    Vista para la creación de nuevos eventos.
+    
+    Permite a los usuarios autenticados crear eventos mediante un formulario.
+    Si las coordenadas geográficas no se proporcionan, intenta geocodificar
+    automáticamente la dirección ingresada en el campo 'location'.
+    
+    Al crear un evento exitosamente:
+    - Se asigna automáticamente el usuario actual como propietario (owner).
+    - El creador se suscribe automáticamente al evento mediante HasSubs.
+    - Se intenta geocodificar la ubicación si no tiene coordenadas.
+    
+    Args:
+        request: Objeto HttpRequest de Django.
+    
+    Returns:
+        GET: Renderiza 'events/event_create.html' con formulario vacío.
+        POST: Redirige a 'events:event_detail' si tiene éxito, o re-renderiza
+              el formulario con errores si la validación falla.
+    
+    Decoradores:
+        @login_required: Requiere que el usuario esté autenticado.
+    """
     if request.method == "POST":
         form = EventForm(request.POST, request.FILES)
         if form.is_valid():
@@ -222,8 +245,25 @@ def event_create(request):
     return render(request, "events/event_create.html", {"form": form})
 
 
-# Vista de detalle: muestra toda la información de un evento específico
 def event_detail(request, event_id):
+    """
+    Vista de detalle que muestra toda la información de un evento específico.
+    
+    Args:
+        request: Objeto HttpRequest de Django.
+        event_id (int): ID del evento a mostrar.
+    
+    Returns:
+        HttpResponse: Renderiza 'events/event_detail.html' con el siguiente contexto:
+            - evento: Objeto Event con toda la información del evento.
+            - imagenes_adicionales: QuerySet de EventImage relacionadas.
+            - isAuthenticated: Boolean indicando si el usuario está autenticado.
+            - subscribed_event_ids: Lista de IDs de eventos a los que está suscrito.
+            - is_subscribed: Boolean indicando si está suscrito a este evento.
+            - is_owner: Boolean indicando si el usuario es el organizador.
+            - subscriber_count: Número total de suscriptores del evento.
+
+    """
     evento = get_object_or_404(Event, id=event_id)
 
     # Obtener imágenes adicionales del evento (si existen)
@@ -255,12 +295,27 @@ def event_detail(request, event_id):
 
 @login_required
 def subscribe(request):
-    """Procesa la suscripción de un usuario a un evento.
-
-    Se espera un POST con `event_id`. Si la suscripción ya existe, muestra
-    un mensaje informativo; si se crea correctamente, muestra éxito.
-    Redirige a la página desde la que vino el request (HTTP_REFERER) o a
-    la lista de eventos como fallback.
+    """
+    Procesa la suscripción de un usuario a un evento.
+    
+    Permite a usuarios autenticados suscribirse a eventos. Si ya están suscritos,
+    retorna un mensaje informativo.
+    
+    Args:
+        request: Objeto HttpRequest de Django.
+    
+    Parámetros esperados (POST JSON):
+        event_id (int): ID del evento al que suscribirse.
+    
+    Returns:
+        JsonResponse con:
+            - status (str): 'success' si se creó la suscripción, 'info' si ya existía,
+                           'error' si hubo un problema.
+            - message (str): Mensaje descriptivo del resultado.
+            - subscribed (bool): True indicando que el usuario está suscrito.
+            - event_id (int): ID del evento.
+            - subscription_count (int): Número actualizado de suscriptores.
+    
     """
     if request.method != 'POST':
         return redirect('events:event_list')
@@ -294,9 +349,27 @@ def subscribe(request):
 
 @login_required
 def unsubscribe(request):
-    """Procesa la desuscripción de un usuario a un evento (POST).
-
-    Responde JSON si la petición es AJAX, o redirect si es una petición normal.
+    """
+    Procesa la desuscripción de un usuario de un evento.
+    
+    Elimina la suscripción existente entre el usuario autenticado y el evento
+    especificado. Si no existe una suscripción previa, retorna un mensaje informativo.
+    
+    Args:
+        request: Objeto HttpRequest de Django.
+    
+    Parámetros esperados (POST JSON):
+        event_id (int): ID del evento del que desuscribirse.
+    
+    Returns:
+        JsonResponse con:
+            - status (str): 'success' si se eliminó la suscripción, 'info' si no existía,
+                           'error' si hubo un problema.
+            - message (str): Mensaje descriptivo del resultado.
+            - subscribed (bool): False indicando que el usuario no está suscrito.
+            - event_id (int): ID del evento.
+            - subscription_count (int): Número actualizado de suscriptores.
+    
     """
     if request.method != 'POST':
         return redirect('events:event_list')
@@ -330,7 +403,33 @@ def unsubscribe(request):
 
 @login_required
 def calendar_view(request):
-    """Vista de calendario interactivo con eventos suscritos del usuario"""
+    """
+    Vista de calendario interactivo que muestra los eventos suscritos del usuario.
+    
+    Presenta un calendario visual con todos los eventos a los que el usuario está
+    suscrito, agrupados por mes para facilitar la navegación temporal. Cada evento
+    incluye información detallada como nombre, fecha formateada, ubicación,
+    categoría y organizador.
+    
+    Args:
+        request: Objeto HttpRequest de Django.
+    
+    Returns:
+        HttpResponse: Renderiza 'events/calendar.html' con el siguiente contexto:
+            - eventos_suscritos: Lista de objetos Event del usuario.
+            - eventos_por_mes: String JSON con eventos agrupados por mes (YYYY-MM).
+                              Cada evento incluye:
+                              * id: ID del evento
+                              * name: Nombre del evento
+                              * date: Fecha ISO format
+                              * date_formatted: Fecha legible (ej. "15 de Enero de 2025")
+                              * time_formatted: Hora legible (ej. "18:30")
+                              * location: Ubicación del evento
+                              * category: Nombre de la categoría o 'Sin categoría'
+                              * organizer: Username del organizador
+            - mes_actual: String con el mes actual en formato 'YYYY-MM'.
+    
+    """
     # Obtener todos los eventos a los que el usuario está suscrito
     suscripciones = HasSubs.objects.filter(username=request.user).select_related('name')
     eventos_suscritos = [sub.name for sub in suscripciones]
@@ -369,7 +468,18 @@ def calendar_view(request):
     
     return render(request, 'events/calendar.html', context)
 
+def about(request):
+    """
+    Vista simple que renderiza la página 'Acerca de' o 'About'.
+    
+    Muestra información general sobre la aplicación, sus características,
+    equipo de desarrollo u otra información corporativa.
+    
+    Args:
+        request: Objeto HttpRequest de Django.
+    
+    Returns:
+        HttpResponse: Renderiza 'events/about.html' sin contexto adicional.
+    """
+    return render(request, 'events/about.html')
 
-# Vista de testeo de mapa
-def test_view(request):
-    return render(request, "events/tests/test_mapa.html")
