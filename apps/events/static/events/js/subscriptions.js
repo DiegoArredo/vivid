@@ -19,14 +19,14 @@ function updateButtonState(button, subscribed) {
     button.textContent = 'Ya suscrito';
   } else {
     button.classList.remove('subscribed');
-    button.textContent = 'Suscribirme 🚀';
+    button.innerHTML = 'Suscribirme <img src="/static/events/images/icons/assist-rocket.svg" alt="" class="btn-icon">';
   }
 }
 
 function updateSuvscribersCount(eventId, newCount) {
   const countSpan = document.getElementById(`subscribers-count-${eventId}`);
   if (countSpan) {
-    countSpan.textContent = `👥 ${newCount} suscriptor${newCount !== 1 ? 'es' : ''}`;
+    countSpan.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16" style="vertical-align: middle; margin-right: 4px;" fill="#6c757d"><path d="M9 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0-6c1.1 0 2 .9 2 2s-.9 2-2 2-2-.9-2-2 .9-2 2-2zm0 7c-2.67 0-8 1.34-8 4v3h16v-3c0-2.66-5.33-4-8-4z"/></svg> ${newCount} suscriptor${newCount !== 1 ? 'es' : ''}`;
   }
 }
 

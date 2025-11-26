@@ -71,7 +71,11 @@
       <a href="{% url 'account_signup' %}"
         style="background: white; color: var(--primary-color); padding: 8px 16px; border-radius: 20px; font-weight: 600;">Registrarme</a>
       <div class="user-icon">
-        <img src="{% static 'events/images/icons/profile-icon.svg' %}" alt="Usuario" class="user-icon-svg">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 375 375" class="user-icon-svg">
+          <circle cx="187.5" cy="187.5" r="187.5" fill="#ffffff"/>
+          <path d="M187.5 135c21 0 38-17 38-38s-17-38-38-38-38 17-38 38 17 38 38 38z" fill="#4a90e2"/>
+          <path d="M250 280c0-15-50-25-62.5-25s-62.5 10-62.5 25v25h125v-25z" fill="#4a90e2"/>
+        </svg>
       </div>
       {% endif %}
 

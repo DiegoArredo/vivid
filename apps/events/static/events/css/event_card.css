@@ -219,6 +219,16 @@
     transition: background 0.3s, transform 0.2s;
     align-self: flex-start;
     font-size: 14px;
+    text-decoration: none !important;
+}
+
+.attend-btn:link,
+.attend-btn:visited,
+.attend-btn:hover,
+.attend-btn:active,
+.attend-btn:focus {
+    text-decoration: none !important;
+    color: var(--white) !important;
 }
 
 .attend-btn .btn-icon {

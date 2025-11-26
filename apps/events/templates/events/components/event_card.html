@@ -80,7 +80,10 @@ style="cursor:pointer;">
       {% endif %}
 
       {% else %}
-      <a href="{% url 'account_login' %}?next={% url 'events:event_list' %}" class="attend-btn">Suscribirme 🚀</a>
+      <a href="{% url 'account_login' %}?next={% url 'events:event_list' %}" class="attend-btn">
+        Suscribirme 
+        <img src="{% static 'events/images/icons/assist-rocket.svg' %}" alt="" class="btn-icon">
+      </a>
       {% endif %}
 
       <!-- Botón Ver detalles -->
