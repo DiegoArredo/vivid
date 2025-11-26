@@ -43,14 +43,13 @@ INSTALLED_APPS = [
     "apps.events",
     "apps.maps",
     "apps.users",
-    # "apps.dashboard",  # Para futuro
-    'django.contrib.sites',  # <--- AGREGAR
-    'allauth',               # <--- AGREGAR
-    'allauth.account',       # <--- AGREGAR
-    'allauth.socialaccount', # <--- AGREGAR (Para Google)
+    'django.contrib.sites',  
+    'allauth',               
+    'allauth.account',       
+    'allauth.socialaccount', 
 ]
 
-SITE_ID = 1  # <--- IMPORTANTE
+SITE_ID = 1  
 
 
 MIDDLEWARE = [
