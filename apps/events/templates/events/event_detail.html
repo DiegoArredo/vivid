@@ -90,6 +90,7 @@
                         <span class="info-value">{{ evento.owner.username }}</span>
                     </div>
                 </div>
+               
 
 
                 {% if evento.category %}
@@ -103,6 +104,17 @@
                     </div>
                 </div>
                 {% endif %}
+                 <div class="info-item">
+                    <span class="info-icon">
+                        <img src="{% static 'events/images/icons/info-icon.svg' %}" alt="Organizador" class="profile-icon">
+                    </span>
+                    <div class="info-text">
+                        <span class="info-label">Asistentes</span>
+                        <span class="info-value">{{ subscriber_count }}</span>
+                    </div>
+                </div>
+
+
             </div>
         </div>
 
