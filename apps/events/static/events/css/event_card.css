@@ -1,3 +1,11 @@
+/* Ícono de distancia: igual tamaño que location pero con leve diferencia visual */
+.distance-icon {
+    width: 18px;
+    height: 18px;
+    margin-right: 4px;
+    vertical-align: middle;
+    filter: grayscale(0.2) brightness(0.95) contrast(1.2);
+}
 /* =========================================
    TARJETA DE EVENTO
 ========================================= */

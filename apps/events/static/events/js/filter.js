@@ -480,9 +480,12 @@ document.addEventListener('DOMContentLoaded', function () {
 // Helpers para crear cards y listeners
 // ===============================
 
-// Define el HTML para el icono de ubicación usando la misma ruta que en event-card.html
+// Define el HTML para el icono de ubicación y distancia
 const LOCATION_ICON_HTML = `
-  <img src="/static/events/images/icons/location-icon.svg" alt="Ubicación" class="location-icon">
+    <img src="/static/events/images/icons/location-icon.svg" alt="Ubicación" class="location-icon">
+`;
+const DISTANCE_ICON_HTML = `
+    <img src="/static/events/images/icons/distance-icon.svg" alt="Distancia" class="distance-icon">
 `;
 
 
@@ -624,7 +627,7 @@ function createEventCardHTML(ev, options = {}) {
                 ${subscribersCountHTML}
                 <p class="event-organizer">de: ${escapedOwner}</p>
                 <div class="event-meta">
-                <span>${LOCATION_ICON_HTML} ${distanceText}</span>
+                <span>${DISTANCE_ICON_HTML} ${distanceText}</span>
                 <span class="event-datetime">Fecha: ${formattedDate}</span>
                 </div>
                 <p class="event-location">${escapedLocation}</p>
