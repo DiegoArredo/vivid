@@ -132,6 +132,21 @@
     -webkit-box-orient: vertical;
 }
 
+.subscribers-info {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 8px;
+    color: var(--text-medium);
+    font-size: 14px;
+}
+
+.subscribers-icon {
+    width: 18px;
+    height: 18px;
+    object-fit: contain;
+}
+
 .event-meta {
     display: flex;
     gap: 15px;

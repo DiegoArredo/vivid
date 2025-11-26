@@ -598,9 +598,10 @@ function createEventCardHTML(ev, options = {}) {
     // cantidad de suscriptores
     const subscribersCount = ev.subscription_count || 0;
     const subscribersCountHTML = `
-        
-            <span id="subscribers-count-${ev.id}"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16" style="vertical-align: middle; margin-right: 4px;" fill="#6c757d"><path d="M9 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0-6c1.1 0 2 .9 2 2s-.9 2-2 2-2-.9-2-2 .9-2 2-2zm0 7c-2.67 0-8 1.34-8 4v3h16v-3c0-2.66-5.33-4-8-4z"/></svg> ${subscribersCount} suscriptor${subscribersCount !== 1 ? 'es' : ''}</span>
-     
+        <div class="subscribers-info">
+            <img src="/static/events/images/icons/suscribers-icon.svg" alt="Suscriptores" class="subscribers-icon">
+            <span id="subscribers-count-${ev.id}">${subscribersCount} suscriptor${subscribersCount !== 1 ? 'es' : ''}</span>
+        </div>
     `;
 
     // Construir el HTML completo

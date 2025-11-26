@@ -26,6 +26,10 @@ style="cursor:pointer;">
   <div class="event-details">
 
     <h3 class="event-title">{{ evento.name }}</h3>
+    <div class="subscribers-info">
+      <img src="{% static 'events/images/icons/suscribers-icon.svg' %}" alt="Suscriptores" class="subscribers-icon">
+      <span id="subscribers-count-{{ evento.id }}">{{ evento.attendees.count }} suscriptor{{ evento.attendees.count|pluralize }}</span>
+    </div>
     <div class="event-meta">
       <span>
           <img src="{% static 'events/images/icons/location-icon.svg' %}" alt="Ubicación" class="location-icon">
