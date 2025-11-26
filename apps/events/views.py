@@ -11,20 +11,8 @@ import json
 import math
 from django.db.models import Q, Count
 
-# Vista de testeo css y estilos de home
-# def test_view(request):
-#    return render(request, 'events/test.html')
-
-# Vista de testeo de navbar
-# def test_view(request):
-#    return render(request, 'events/test_navbar.html')
-
-# Vista de testeo de event card
-# def test_view(request):
-#    return render(request, 'events/test_card.html')
-
-
 def event_list(request):
+
     if request.method == "POST":
         try:
             data = json.loads(request.body.decode("utf-8"))
@@ -43,11 +31,6 @@ def event_list(request):
             category_id = int(category_id) if category_id is not None else None
         except (ValueError, TypeError):
             category_id = None
-
-        # DEbug
-        print("filter_type:", filter_type)
-        print("search_value:", search_value)
-        print("category_id:", category_id)
 
         # Obtener parámetros de filtrado
         # Query base
@@ -164,21 +147,10 @@ def event_list(request):
    
     #Obtener eventos
     else:
-        # eventos = Event.objects.all().select_related("owner", "category")
-        # # # Obtener todas las categorías para el filtro
-
-
-        # # Optimización: obtener ids de eventos a los que el usuario está suscrito
-        # if request.user.is_authenticated:
-        #     subscribed_event_ids = list(HasSubs.objects.filter(username=request.user).values_list('name_id', flat=True))
-        # else:
-        #     subscribed_event_ids = []
 
         categorias = Category.objects.all()
-        context = {
-            # 'eventos': eventos,
+        context = {        
             'categorias': categorias,
-            # 'subscribed_event_ids': subscribed_event_ids,
         }
 
         return render(request, 'events/event_list.html', context)
@@ -370,6 +342,3 @@ def calendar_view(request):
     return render(request, 'events/calendar.html', context)
 
 
-# Vista de testeo de mapa
-def test_view(request):
-    return render(request, "events/tests/test_mapa.html")
