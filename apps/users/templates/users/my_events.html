@@ -1,0 +1,162 @@
+{% extends 'events/base.html' %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'events/css/event_card.css' %}">
+<link rel="stylesheet" href="{% static 'users/css/my_events.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="my-events-container">
+  <h1 class="page-title">Mis Eventos</h1>
+  <p class="page-subtitle">Gestiona los eventos que has creado y revisa los eventos a los que estás suscrito</p>
+
+  <div class="events-grid">
+    <!-- Eventos Creados -->
+    <div class="events-column">
+      <div class="column-header">
+        <h2 class="column-title">Eventos Creados</h2>
+        <span class="event-count">{{ created_events|length }}</span>
+      </div>
+      
+      <div class="events-list">
+        {% for evento in created_events %}
+          <div class="event-card" data-id="{{ evento.id }}">
+            <!-- Photo del evento -->
+            <div class="event-image">
+              {% if evento.photo %}
+              <img src="{{ evento.photo.url }}" alt="{{ evento.name }}">
+              {% else %}
+              <div class="default-image">
+                <div class="cloud cloud1"></div>
+                <div class="cloud cloud2"></div>
+                <div class="hill"></div>
+              </div>
+              {% endif %}
+            </div>
+
+            <!-- Detalles del evento -->
+            <div class="event-details">
+              <h3 class="event-title">{{ evento.name }}</h3>
+              
+              <div class="event-meta">
+                <span>
+                  <img src="{% static 'events/images/icons/location-icon.svg' %}" alt="Ubicación" class="location-icon">
+                  {{ evento.location }}
+                </span>
+              </div>
+
+              <div class="event-meta">
+                <span class="event-datetime">📅 {{ evento.date|date:"d/m/Y - H:i" }}</span>
+              </div>
+
+              <p class="event-description">
+                {{ evento.description|truncatewords:15 }}
+              </p>
+
+              <!-- Tags -->
+              {% if evento.tags %}
+              <div class="event-tags">
+                {% for tag in evento.tags.split %}
+                <span class="tag">{{ tag }}</span>
+                {% endfor %}
+              </div>
+              {% endif %}
+
+              <!-- Botón Ver detalles -->
+              <div class="event-actions" style="margin-top: 15px;">
+                <a href="{% url 'events:event_detail' evento.id %}" class="details-btn">
+                  <img src="{% static 'events/images/icons/info-icon.svg' %}" alt="" class="btn-icon">
+                  <span>Ver detalles</span>
+                </a>
+              </div>
+            </div>
+          </div>
+        {% empty %}
+          <div class="no-events">
+            <div class="no-events-icon">📝</div>
+            <p>Aún no has creado ningún evento</p>
+            <a href="{% url 'events:event_create' %}" style="color: var(--primary-color); text-decoration: underline;">Crear mi primer evento</a>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Eventos Suscritos -->
+    <div class="events-column">
+      <div class="column-header">
+        <h2 class="column-title">Eventos Suscritos</h2>
+        <span class="event-count">{{ subscribed_events|length }}</span>
+      </div>
+      
+      <div class="events-list">
+        {% for evento in subscribed_events_not_owned %}
+          <div class="event-card" data-id="{{ evento.id }}">
+            <!-- Photo del evento -->
+            <div class="event-image">
+              {% if evento.photo %}
+              <img src="{{ evento.photo.url }}" alt="{{ evento.name }}">
+              {% else %}
+              <div class="default-image">
+                <div class="cloud cloud1"></div>
+                <div class="cloud cloud2"></div>
+                <div class="hill"></div>
+              </div>
+              {% endif %}
+            </div>
+
+            <!-- Detalles del evento -->
+            <div class="event-details">
+              <h3 class="event-title">{{ evento.name }}</h3>
+              
+              <div class="event-meta">
+                <span>
+                  <img src="{% static 'events/images/icons/location-icon.svg' %}" alt="Ubicación" class="location-icon">
+                  {{ evento.location }}
+                </span>
+              </div>
+
+              <div class="event-meta">
+                <span class="event-datetime">📅 {{ evento.date|date:"d/m/Y - H:i" }}</span>
+              </div>
+
+              <p class="event-organizer">Organizado por: {{ evento.owner.username }}</p>
+
+              <p class="event-description">
+                {{ evento.description|truncatewords:15 }}
+              </p>
+
+              <!-- Tags -->
+              {% if evento.tags %}
+              <div class="event-tags">
+                {% for tag in evento.tags.split %}
+                <span class="tag">{{ tag }}</span>
+                {% endfor %}
+              </div>
+              {% endif %}
+
+              <!-- Botón Ver detalles -->
+              <div class="event-actions" style="margin-top: 15px;">
+                <a href="{% url 'events:event_detail' evento.id %}" class="details-btn">
+                  <img src="{% static 'events/images/icons/info-icon.svg' %}" alt="" class="btn-icon">
+                  <span>Ver detalles</span>
+                </a>
+              </div>
+            </div>
+          </div>
+        {% empty %}
+          <div class="no-events">
+            <div class="no-events-icon">🎫</div>
+            <p>No estás suscrito a ningún evento</p>
+            <a href="{% url 'events:event_list' %}" style="color: var(--primary-color); text-decoration: underline;">Explorar eventos</a>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'events/js/subscriptions.js' %}"></script>
+{% endblock %}
