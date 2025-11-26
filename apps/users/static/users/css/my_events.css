@@ -91,7 +91,7 @@
 
   /* Botón de ver detalles destacado */
   .event-card .details-btn {
-    background: var(--primary-color);
+    background: #2d9cc8;
     color: white;
     padding: 10px 20px;
     border-radius: 8px;
