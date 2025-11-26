@@ -1,0 +1,132 @@
+
+  .my-events-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 40px 20px;
+  }
+
+  .page-title {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: var(--primary-color);
+    margin-bottom: 10px;
+    text-align: center;
+  }
+
+  .page-subtitle {
+    text-align: center;
+    color: #6B7280;
+    margin-bottom: 40px;
+    font-size: 1.1rem;
+  }
+
+  .events-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+    gap: 30px;
+    margin-top: 30px;
+  }
+
+  .events-column {
+    background: #f9fafb;
+    border-radius: 16px;
+    padding: 30px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  }
+
+  .column-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 25px;
+    padding-bottom: 15px;
+    border-bottom: 3px solid var(--primary-color);
+  }
+
+  .column-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--primary-color);
+    margin: 0;
+  }
+
+  .event-count {
+    background: var(--primary-color);
+    color: white;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    font-weight: 600;
+  }
+
+  .events-list {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .no-events {
+    text-align: center;
+    padding: 60px 20px;
+    color: #9CA3AF;
+    font-size: 1.1rem;
+  }
+
+  .no-events-icon {
+    font-size: 4rem;
+    margin-bottom: 20px;
+    opacity: 0.3;
+  }
+
+  /* Ajustes para event-card en esta vista */
+  .events-list .event-card {
+    margin-bottom: 0;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+
+  .events-list .event-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  }
+
+  /* Botón de ver detalles destacado */
+  .event-card .details-btn {
+    background: var(--primary-color);
+    color: white;
+    padding: 10px 20px;
+    border-radius: 8px;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+    transition: background 0.2s;
+  }
+
+  .event-card .details-btn:hover {
+    background: #0d9488;
+  }
+
+  .event-card .details-btn .btn-icon {
+    filter: brightness(0) invert(1);
+  }
+
+  @media (max-width: 1100px) {
+    .events-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .page-title {
+      font-size: 2rem;
+    }
+
+    .events-grid {
+      gap: 20px;
+    }
+
+    .events-column {
+      padding: 20px;
+    }
+  }
