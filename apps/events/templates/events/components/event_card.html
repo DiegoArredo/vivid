@@ -33,17 +33,22 @@ style="cursor:pointer;">
         </span>
 
       {# 👇 ESTA ES LA FECHA QUE LEERÁ getEventsFromDOM COMO e.datetime #}
-      <span class="event-datetime">• {{ evento.date|date:"d-m-Y, H:i" }}</span>
+      <span class="event-datetime"><img src="{% static 'events/images/icons/calendar-icon.svg' %}" alt="Fecha" class="calendar-icon"> {{ evento.date|date:"d-m-Y, H:i" }}</span>
     </div>
     
-    <p class="event-location">{{ evento.location }}</p>
+    <p class="event-location">
+      {% if evento.location == "Parque O'Higgins, Santiago" %}
+        <img src="{% static 'events/images/icons/location-icon.svg' %}" alt="Ubicación actual" class="location-icon">
+      {% endif %}
+      {{ evento.location }}
+    </p>
     <p class="event-organizer">de: {{ evento.owner.username }}</p>
 
     {# Coordenadas visibles (solo display). NO tocar data-lat/lng arriba. #}
+    {# Ya no se muestra el icono de ubicación junto a las coordenadas #}
     {% if evento.latitud and evento.longitud %}
       <div class="event-meta">
         <span>
-          <img src="{% static 'events/images/icons/location-icon.svg' %}" alt="Ubicación" class="location-icon">
           {{ evento.latitud|floatformat:"6"|unlocalize }},
           {{ evento.longitud|floatformat:"6"|unlocalize }}
         </span>

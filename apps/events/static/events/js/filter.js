@@ -526,6 +526,12 @@ function createEventCardHTML(ev, options = {}) {
     // Coordenadas
     const lat = ev.latitud ? parseFloat(ev.latitud).toFixed(6) : '';
     const lng = ev.longitud ? parseFloat(ev.longitud).toFixed(6) : '';
+
+    // Icono de ubicación solo para Parque O'Higgins, Santiago
+    let locationIconHTML = '';
+    if (ev.location === "Parque O'Higgins, Santiago") {
+        locationIconHTML = '<img src="/static/events/images/icons/location-icon.svg" alt="Ubicación actual" class="location-icon">';
+    }
     
     // Imagen del evento
     let imageHTML = '';
@@ -584,12 +590,12 @@ function createEventCardHTML(ev, options = {}) {
         `;
     }
     
-    // Coordenadas visibles (opcional)
+    // Coordenadas visibles (opcional, sin icono)
     let coordsHTML = '';
     if (lat && lng) {
         coordsHTML = `
             <div class="event-meta">
-                <span>${LOCATION_ICON_HTML} ${lat}, ${lng}</span>
+                <span>${lat}, ${lng}</span>
             </div>
         `;
     }
@@ -628,9 +634,9 @@ function createEventCardHTML(ev, options = {}) {
                 <p class="event-organizer">de: ${escapedOwner}</p>
                 <div class="event-meta">
                 <span>${DISTANCE_ICON_HTML} ${distanceText}</span>
-                <span class="event-datetime">Fecha: ${formattedDate}</span>
+                <span class="event-datetime"><img src="/static/events/images/icons/calendar-icon.svg" alt="Fecha" class="calendar-icon"> ${formattedDate}</span>
                 </div>
-                <p class="event-location">${escapedLocation}</p>
+                <p class="event-location">${locationIconHTML}${escapedLocation}</p>
                 
                 ${coordsHTML}
                 

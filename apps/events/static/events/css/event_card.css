@@ -1,4 +1,14 @@
+/* Icono de calendario para la fecha en event card */
+/* Icono de calendario: levemente más pequeño */
+.calendar-icon {
+    width: 15px;
+    height: 15px;
+    margin-right: 3px;
+    vertical-align: middle;
+    filter: grayscale(0.2) brightness(1.1) contrast(1.1);
+}
 /* Ícono de distancia: igual tamaño que location pero con leve diferencia visual */
+/* Icono de distancia: levemente más grande pero más pequeño que antes */
 .distance-icon {
     width: 18px;
     height: 18px;
@@ -46,10 +56,17 @@
 
 /* Ajustar el tamaño del icono de ubicación */
 .location-icon {
-    width: 18px; 
+    width: 18px;
     height: 18px;
-    vertical-align: middle; 
+    vertical-align: middle;
     margin-right: 6px;
+}
+
+/* Solo en la ubicación actual (dentro de .event-location) */
+.event-location .location-icon {
+    margin-right: 8px;
+    margin-left: 0;
+    filter: grayscale(0.1) brightness(1.1) contrast(1.1);
 }
 
 
