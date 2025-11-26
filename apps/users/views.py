@@ -1,17 +1,6 @@
 from django.shortcuts import render, redirect
-from django.contrib.auth import logout
 from django.contrib.auth.decorators import login_required
-from django.contrib import messages
 
-@login_required
-def logout_view(request):
-    """
-    Vista de cierre de sesión
-    """
-    username = request.user.username
-    logout(request)
-    messages.info(request, f'Has cerrado sesión. ¡Hasta pronto, {username}!')
-    return redirect('events:event_list')  # ← CORREGIDO: agregado 'events:'
 
 @login_required
 def user_events_view(request):
