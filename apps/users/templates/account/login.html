@@ -59,7 +59,10 @@
                 <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}" />
                 {% endif %}
 
-                <button type="submit" class="auth-button">Iniciar Sesión 🚀</button>
+                <button type="submit" class="auth-button">
+                    Iniciar Sesión 
+                    <img src="{% static 'events/images/icons/assist-rocket.svg' %}" alt="" class="btn-icon">
+                </button>
             </form>
 
             <div class="auth-footer">
