@@ -2,11 +2,11 @@
 
 **Proyecto:** Vivid: Planificador de eventos geolocalizados  
 **Curso:** CC4401 - Ingeniería de Software   
-**Equipo 2:** Lucciano Aguilar, Diego Arredondo, Pablo Reyes, Matías Saavedra, Nicolás Soto  
+**Equipo 2:** Lucciano Aguilar, Diego Arredondo, Pablo Reyes, Matías Saavedra
 **Profesores:** Jocelyn Simmonds  
 **Ayudantes:** Jannis Isabel Cruz, Nicolás Grandón  
 **Auxiliar:** Joel Riquelme  
-**Fecha:** Octubre 2025  
+**Fecha:** Noviembre 2025  
 
 ---
 
@@ -39,30 +39,55 @@ El sistema está dividido modularmente en aplicaciones internas, siguiendo las b
 
 ```
 /apps
- ├── events/      # Gestión de eventos y vistas principales (Home, Create, Detail)
- ├── users/       # Autenticación y perfiles de usuario (pendiente de implementación)
- ├── maps/        # Funcionalidades geográficas y utilidades de mapa
- └── dashboard/   # Panel futuro para administración y métricas (en planificación)
+ ├── events/      # Gestión completa de eventos (CRUD, filtros, suscripciones, calendario), Mapa interactivo, geocodificación inversa y sincronización con la interfaz.
+ ├── users/       # Autenticación, perfiles y gestión de eventos personales
+
 ```
 
 Los archivos estáticos (CSS, JS, imágenes) se organizan por componente, garantizando **coherencia visual** y **reutilización** entre vistas.  
 Se aplicó un enfoque de **diseño modular y escalable**, priorizando la separación lógica de responsabilidades entre frontend, backend y persistencia de datos.
 
+### 🔧 Actualizaciones del Sprint 2 en la arquitectura
+
+Durante el Sprint 2 se añadió:
+
+- **Integración completa de MapLibre GL JS**:
+  - Marcadores dinámicos sincronizados con la lista de eventos.
+  - FlyTo y resaltado temporal al seleccionar un evento.
+  - Mapa dedicado en la vista de detalle.
+  - Mapa interactivo en creación con marcador arrastrable.
+
+- **Geocodificación inversa** usando la API de Nominatim para obtener direcciones reales.
+
+- **Optimización del ORM con** `select_related`, `prefetch_related` y `annotate`, reduciendo las consultas N+1.
+
+- **Sincronización completa frontend–backend** para filtros avanzados.
 ---
 
 ## Principales Decisiones de Diseño
 
 ### 1. **Elección Tecnológica**
-Inicialmente se evaluó integrar **Google Maps API**, pero se optó por **MapLibre GL JS**, una alternativa **open source** más ligera y libre de costos.  
-Esta decisión respondió tanto a consideraciones éticas (tecnología abierta) como prácticas (mayor control sobre el mapa y personalización visual).
+Se optó por **MapLibre GL JS**, una alternativa open-source que permitió mayor control sobre la representación del mapa sin costos asociados.  
+En Sprint 2 esta decisión fue validada al permitir:
+- Marcadores dinámicos.
+- Sincronización con filtros.
+- Integración con geocodificación inversa.
 
 ### 2. **Estructura del Modelo de Datos**
-El modelo fue diseñado para ser **escalable y claro**, compuesto por tres entidades principales:
-- **User:** extiende el modelo base de Django y representa a los usuarios/organizadores.
-- **Event:** núcleo del sistema, con atributos como `name`, `description`, `date_time`, `location`, `lat`, `lng`, `image`, `owner`.
-- **Category:** clasificación temática de los eventos (música, deporte, arte, etc.).
+El modelo fue diseñado para ser **escalable y claro**, compuesto por cinco entidades principales:
+- **User:** extiende AbstractUser de Django, con ID personalizado y foto de perfil.
+- **Event:** núcleo del sistema, con atributos como `name`, `description`, `date`, `location`, `latitud`, `longitud`, `photo`, `owner`, `category`, `tags` y relación ManyToMany con asistentes.
+- **Category:** clasificación temática de los eventos (música, deporte, arte, tecnología, etc.).
+- **EventImage:** galería de imágenes adicionales para cada evento, con caption opcional.
+- **HasSubs:** tabla intermedia para suscripciones usuario-evento, con timestamp de suscripción y restricción de unicidad.
 
-El diseño prioriza relaciones uno-a-muchos y la facilidad de extender funcionalidades futuras, como **suscripciones**, **historial de asistencia** y **recomendaciones personalizadas**.
+El diseño implementa relaciones uno-a-muchos y muchos-a-muchos, con **documentación completa en docstrings** siguiendo estándares de Python para facilitar el mantenimiento y escalabilidad.
+
+Durante Sprint 2 se consolidó el diseño al validar:
+- `HasSubs` como tabla intermedia con restricción de unicidad.
+- Comportamiento correcto de `CASCADE` y `SET_NULL`.
+- Uso de `DecimalField` para latitud/longitud con precisión suficiente para geolocalización.
+- Inclusión de propiedades auxiliares sin modificar estructura.
 
 ### 3. **Diseño UI/UX**
 Se definió una línea visual coherente y moderna, inspirada en tonos cálidos y contrastes suaves.  
@@ -76,22 +101,101 @@ Entre las decisiones clave:
 
 Los estilos se organizaron en módulos (`base.css`, `navbar.css`, `event_card.css`, etc.) con **variables CSS globales**, garantizando consistencia en colores y tipografía.
 
+Sprint 2 añadió:
+- **Pills interactivas** para filtros activos.
+- **Marcadores visualmente personalizados**.
+- Migración completa a **íconos SVG**.
+
 ### 4. **Interactividad y Usabilidad**
 Se integró **JavaScript** para conectar la lista de eventos con el mapa. Cada marcador geográfico se sincroniza con la card correspondiente, permitiendo navegación fluida entre elementos visuales y geográficos.  
 Este comportamiento fue central en la validación del concepto durante el Sprint 1.
 
+En Sprint 2 se agregó:
+- Sincronización lista → mapa.
+- Actualización dinámica de suscripciones.
+- Validación visual inmediata de filtros.
 ---
 
-## ⚙️ Funcionalidades Implementadas (Sprint 1)
+## ⚙️ Funcionalidades Implementadas
 
 | Funcionalidad | Estado | Descripción |
 |----------------|---------|-------------|
-| **Vista Home** |  Completa | Lista dinámica de eventos + mapa funcional de Santiago (MapLibre GL JS). |
-| **Vista Create** |  Completa | Formulario para crear eventos con nombre, fecha, categoría, imagen y ubicación manual. |
-| **Vista Detail** |  Completa | Página individual del evento con galería, descripción, mapa y acción “Asistir”. |
-| **Modelo de Datos** |  En Desarrollo | Entidades User, Event, Category, EventImage y HasSubs (en base a Django ORM). |
-| **Autenticación / Perfiles** |  Pendiente | Se definió en backlog para Sprint 2. |
-| **Subscripciones / Asistencia** |  Pendiente | Se implementará tras autenticación de usuarios. |
+| **Vista Home (Lista de Eventos)** | ✅ Completa | Lista dinámica con filtros avanzados (búsqueda, categoría, recientes, populares, cercanos) + mapa interactivo con marcadores. |
+| **Vista Create** | ✅ Completa | Formulario completo con geocodificación automática, suscripción automática del creador y validación. |
+| **Vista Detail** | ✅ Completa | Página individual con toda la info del evento, galería de imágenes, mapa, contador de asistentes y botones de suscripción. |
+| **Vista Calendar** | ✅ Completa | Calendario interactivo que muestra eventos suscritos del usuario, agrupados por mes. |
+| **Vista Mis Eventos** | ✅ Completa | Panel personal con eventos creados y suscritos, separando roles de organizador y asistente. |
+| **Vista About** | ✅ Completa | Página informativa sobre el proyecto y el equipo. |
+| **Sistema de Suscripciones** | ✅ Completa | Subscribe/Unsubscribe con respuestas AJAX, validación de duplicados y actualización en tiempo real. |
+| **Autenticación de Usuarios** | ✅ Completa | Sistema completo con django-allauth: registro, login, logout y protección de rutas. |
+| **Modelo de Datos** | ✅ Completa | 5 modelos documentados: User, Event, Category, EventImage, HasSubs con relaciones completas. |
+| **Filtros Dinámicos** | ✅ Completa | Sistema AJAX para filtrar eventos por texto, categoría, fecha, popularidad y distancia geográfica. |
+| **Geocodificación** | ✅ Completa | Conversión automática de direcciones a coordenadas usando API de Nominatim. |
+| **Documentación de Código** | ✅ Completa | Docstrings detallados en models.py y views.py de events y users siguiendo estándares Python. |
+
+
+
+### ✔️ Funcionalidades del Sprint 1 (base)
+- Vista principal con mapa básico y lista de eventos.
+- Modelo de datos inicial y CRUD esencial.
+- Plantillas base y primeros estilos.
+- Sistema de creación de eventos sin geolocalización avanzada.
+
+---
+
+## ✔️ Funcionalidades del Sprint 2 (nuevas)
+
+### 🗺️ Mapa Interactivo Avanzado
+- Marcadores dinámicos desde base de datos.
+- FlyTo al seleccionar evento.
+- Resaltado temporal del marcador activo.
+- Sincronización de visibilidad según filtros aplicados.
+- Pop-up de ubicación actual del usuario.
+
+### 🔎 Sistema de Filtrado Completo
+- Búsqueda por texto libre (título, descripción, ubicación, tags).
+- Filtrado múltiple por categorías.
+- Ordenamiento:
+  - Por cercanía geográfica (usando la API de Geolocalización del navegador).
+  - Por fecha próxima.
+  - Por popularidad (cantidad de suscripciones).
+- Pills visuales removibles.
+
+### 📍 Creación de Eventos con Geolocalización
+- Mapa con marcador arrastrable.
+- Captura automática de coordenadas.
+- Geocodificación inversa (Nominatim).
+- Validación de ubicación.
+- Redirección automática a la vista de detalle tras crear.
+
+### ⭐ Sistema Completo de Suscripciones
+- Subscribe / Unsubscribe con actualización instantánea.
+- Bloqueo de suscripciones duplicadas.
+- Contador dinámico de asistentes.
+
+### 🧾 Vista de Detalle (extendida)
+- Mapa dedicado.
+- Sección mejorada con datos completos y tags.
+- Botones de interacción mejorados.
+
+### 🧑‍💻 Vista “Mis Eventos”
+- Eventos creados por el usuario.
+- Eventos suscritos.
+- Posibilidad de editar o eliminar propios eventos.
+
+### 📅 Vista Calendario
+- Vista mensual navegable.
+- Eventos creados y suscritos del usuario.
+- Navegación directa a la vista del evento.
+
+### 🔐 Autenticación y Seguridad
+- Protección de rutas como creación y gestión.
+- Persistencia de sesión.
+
+### 🧪 QA y Mantenimiento
+- Pruebas completas de flujos centrales.
+- Corrección de bugs.
+- Limpieza y documentación final.
 
 ---
 
@@ -110,36 +214,58 @@ Durante este primer sprint, el equipo enfrentó desafíos propios del trabajo co
 - Nombramiento de un **Scrum Master** responsable del seguimiento y cumplimiento del backlog.  
 - Reuniones semanales más breves y estructuradas, enfocadas en decisiones y bloqueos.  
 
-Estas decisiones permitieron fortalecer la colaboración, evitar retrabajos y alinear las prioridades del equipo.
+
+Durante el Sprint 2 el equipo fortaleció su trabajo colaborativo:
+
+### ✔️ Mejoras incorporadas
+- Tareas más pequeñas (2–3 horas) para seguimiento eficiente.
+- Coordinación activa mediante Telegram.
+- Revisión de código entre pares.
+- Prioridad estratégica en completar todas las funcionalidades core.
+
+### ✔️ Desafíos superados
+- Manejo de permisos de la API de Geolocalización.
+- Problemas cross-browser en el filtrado geográfico.
+- Sincronización frontend–backend en suscripciones.
+- Rate limiting de Nominatim.
 
 ---
-
-## Próximos Pasos (Sprint 2)
-
-- Implementar autenticación y sistema de perfiles (User/Login/Register).  
-- Agregar sistema de suscripciones y asistencia a eventos.  
-- Incorporar vistas complementarias (Calendario, Mis Eventos, Dashboard).  
-- Mejorar el manejo de coordenadas y la interacción directa entre el mapa y los formularios.  
-- Establecer validaciones y pruebas unitarias básicas.  
 
 ---
 
 ## Conclusión
 
-El desarrollo de **Vivid** durante el Sprint 1 permitió **validar el concepto central del proyecto**: una aplicación capaz de representar dinámicamente la vida social local a través de un mapa interactivo y una interfaz limpia.  
-Más allá de la implementación técnica, este sprint fue una **etapa de aprendizaje organizacional**, donde el equipo comprendió la importancia de la planificación granular, la comunicación constante y la visión compartida.
+El desarrollo de **Vivid** ha evolucionado exitosamente desde su concepción inicial hasta convertirse en una **plataforma funcional y completa** para la gestión de eventos geolocalizados. El proyecto logró implementar todas las funcionalidades core planificadas:
 
-**Vivid** se proyecta como una plataforma con potencial real para **revivir la conexión humana** en la era digital, una herramienta que convierte la tecnología en un puente hacia nuevas experiencias, y no en una barrera.
+✅ **Sistema completo de autenticación y perfiles**  
+✅ **CRUD completo de eventos con geocodificación automática**  
+✅ **Sistema robusto de suscripciones con validaciones**  
+✅ **Filtros avanzados y búsqueda dinámica**  
+✅ **Calendario interactivo personalizado**  
+✅ **Integración fluida entre mapa y lista de eventos**  
+✅ **Código completamente documentado y mantenible**
+
+Más allá de la implementación técnica, este proyecto representó un **proceso de aprendizaje continuo** en ingeniería de software, donde el equipo desarrolló competencias en:
+- Trabajo colaborativo con Git y metodologías ágiles
+- Diseño de arquitecturas escalables con Django
+- Desarrollo full-stack con integración de APIs externas
+- Documentación profesional de código
+- Resolución de problemas técnicos complejos
+
+**Vivid** cumple su misión original: **usar la tecnología para acercar personas**, proporcionando una herramienta real que fortalece la vida comunitaria y promueve experiencias presenciales significativas. El proyecto está listo para ser desplegado y continuar evolucionando según las necesidades de sus usuarios.
 
 ---
 
 ## Tecnologías Principales
 
-- **Backend:** Django 5.1 (Python)
-- **Frontend:** HTML5, CSS3 (modular, responsivo), JavaScript
+- **Backend:** Django 5.2.8 (Python 3.x)
+- **Autenticación:** django-allauth 65.13.1
+- **Frontend:** HTML5, CSS3 (modular con variables globales), JavaScript (ES6+)
 - **Mapa:** MapLibre GL JS + OpenFreeMap
-- **Base de Datos:** SQLite3
+- **Geocodificación:** Nominatim API (OpenStreetMap)
+- **Base de Datos:** SQLite3 (desarrollo) / PostgreSQL (producción recomendada)
+- **Imágenes:** Pillow 12.0.0
 - **Control de Versiones:** Git / GitHub
 - **Diseño de Mockups:** Canva
-- **Entorno de desarrollo:** Virtualenv + Django Admin
+- **Entorno de desarrollo:** Virtualenv / venv + Django Admin
 
