@@ -48,23 +48,25 @@ function distanceInMeters(lat1, lon1, lat2, lon2) {
     return R * c;
 }
 
-/**
- * Formato bonito de la distancia
- */
+// Formato bonito de la distancia
+
 function formatDistance(meters) {
-    if (meters < 1000) {
-        return `${Math.round(meters)} M`;
+    if (meters == null || isNaN(Number(meters))) {
+        return null; // sin distancia válida
     }
-    return `${(meters / 1000).toFixed(1)} KM`;
+
+    const m = Number(meters);
+
+    if (m < 1000) {
+        return `${Math.round(m)} m`;
+    }
+    return `${(m / 1000).toFixed(1)} km`;
 }
 
-/**
- * Recorre las .event-card y actualiza el span [data-distance]
- * usando la ubicación del usuario
- */
 function updateEventDistancesForCards(userLat, userLng) {
     if (typeof userLat !== 'number' || typeof userLng !== 'number') {
         console.warn('[distance] userLat/userLng inválidos:', userLat, userLng);
+        // NO tocamos el texto: se queda "Sin ubicación actual"
         return;
     }
 
@@ -83,15 +85,27 @@ function updateEventDistancesForCards(userLat, userLng) {
         const meters = distanceInMeters(userLat, userLng, lat, lng);
         const span = card.querySelector('[data-distance]');
 
-        if (span) {
-            span.textContent = formatDistance(meters);
-            card.dataset.distanceMeters = meters.toFixed(0);
-            // console.log('[distance] Distancia card', card.dataset.id, ':', meters, 'm');
-        } else {
+        if (!span) {
             console.warn('[distance] No hay span [data-distance] en card', card.dataset.id);
+            return;
         }
+
+        const pretty = formatDistance(meters);
+
+        // Si no se pudo calcular, no sobreescribimos el texto inicial "Sin ubicación actual"
+        if (!pretty) {
+            return;
+        }
+
+        // Sólo ponemos el valor numérico, NO repetimos la palabra "Distancia"
+        span.textContent = pretty;
+        card.dataset.distanceMeters = meters.toFixed(0);
+
+        // Debug opcional:
+        // console.log('[distance] card', card.dataset.id, '→', meters, 'm =>', pretty);
     });
 }
+
 
 /**
  * Pide la ubicación del usuario (si no la teníamos) y llama a callback
@@ -548,8 +562,7 @@ function createEventCardHTML(ev, options = {}) {
     }
     
     // Distancia (se actualizará después si hay ubicación del usuario)
-    const distanceText = ev.distancia ? `Distancia: ${ev.distancia} KM` : 'Distancia: Sin ubicación actual';
-    
+    const distanceText = 'Sin ubicación actual';
     // Tags
     let tagsHTML = '';
     if (ev.tags && ev.tags.length > 0) {
@@ -614,54 +627,75 @@ function createEventCardHTML(ev, options = {}) {
     `;
 
     // Construir el HTML completo
-    return `
-        <div class="event-card" 
-             data-id="${ev.id}" 
-             data-lat="${lat}" 
-             data-lng="${lng}" 
-             style="cursor:pointer;">
+   // Construir el HTML completo
+return `
+    <div class="event-card" 
+         data-id="${ev.id}" 
+         data-lat="${lat}" 
+         data-lng="${lng}" 
+         style="cursor:pointer;">
+        
+        <!-- Imagen del evento -->
+        <div class="event-image">
+            ${imageHTML}
+        </div>
+        
+        <!-- Detalles del evento -->
+        <div class="event-details">
+            <h3 class="event-title">${escapedName}</h3>
             
-            <!-- Imagen del evento -->
-            <div class="event-image">
-                ${imageHTML}
+            ${subscribersCountHTML}
+            <p class="event-organizer">de: ${escapedOwner}</p>
+
+            <!-- Distancia + fecha -->
+            <div class="event-meta">
+                <span class="event-distance">
+                    ${DISTANCE_ICON_HTML}
+                    <span class="distance-label">Distancia:</span>
+                    <span class="distance-value" data-distance>Sin ubicación actual</span>
+                </span>
+
+                <span class="event-datetime">
+                    <img src="/static/events/images/icons/calendar-icon.svg" 
+                         alt="Fecha" 
+                         class="calendar-icon">
+                    ${formattedDate}
+                </span>
+            </div>
+
+            <!-- Ubicación -->
+            <p class="event-location">
+                ${locationIconHTML}${escapedLocation}
+            </p>
+            
+            ${coordsHTML}
+            
+            <!-- Descripción -->
+            <p class="event-description">${truncated}</p>
+            
+            <!-- Tags -->
+            <div class="event-tags">
+                ${tagsHTML}
             </div>
             
-            <!-- Detalles del evento -->
-            <div class="event-details">
-                <h3 class="event-title">${escapedName}</h3>
+            <!-- Acciones -->
+            <div class="event-actions" 
+                 style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+                ${subscribeButtonHTML}
                 
-                ${subscribersCountHTML}
-                <p class="event-organizer">de: ${escapedOwner}</p>
-                <div class="event-meta">
-                <span>${DISTANCE_ICON_HTML} ${distanceText}</span>
-                <span class="event-datetime"><img src="/static/events/images/icons/calendar-icon.svg" alt="Fecha" class="calendar-icon"> ${formattedDate}</span>
-                </div>
-                <p class="event-location">${locationIconHTML}${escapedLocation}</p>
-                
-                ${coordsHTML}
-                
-                <p class="event-description">${truncated}</p>
-                
-                <!-- Tags -->
-                <div class="event-tags">
-                    ${tagsHTML}
-                </div>
-                
-                <!-- Acciones -->
-                <div class="event-actions" style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
-                    ${subscribeButtonHTML}
-                    
-                    <!-- Botón Ver detalles -->
-                    <a href="/evento/${ev.id}/" 
-                       class="details-btn" 
-                       onclick="event.stopPropagation();">
-                        <img src="/static/events/images/icons/info-icon.svg" alt="" class="btn-icon">
-                        <span>Ver detalles</span>
-                    </a>
-                </div>
+                <!-- Botón Ver detalles -->
+                <a href="/evento/${ev.id}/" 
+                   class="details-btn" 
+                   onclick="event.stopPropagation();">
+                    <img src="/static/events/images/icons/info-icon.svg" 
+                         alt="" 
+                         class="btn-icon">
+                    <span>Ver detalles</span>
+                </a>
             </div>
         </div>
-    `;
+    </div>
+`;
 }
 
 // Helper para escapar HTML (si no existe ya)
