@@ -1,7 +1,7 @@
 # 🚀 Vivid — Planificador de Eventos Geolocalizados
 
 > **Contexto:** Proyecto final para el curso de Ingeniería de Software (CC4401) en la Universidad de Chile. Desarrollado en equipo bajo metodologías ágiles durante el semestre de Primavera 2025.
-> **Equipo:** Lucplsciano Aguilar, **Diego Arredondo**, Pablo Reyes, Matías Saavedra.
+> **Equipo:** Lucciano Aguilar, **Diego Arredondo**, Pablo Reyes, Matías Saavedra.
 
 ---
 
